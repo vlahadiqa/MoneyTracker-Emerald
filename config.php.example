@@ -1,0 +1,13 @@
+<?php
+/**
+ * Money Tracker Configuration Template
+ * Rename this file to 'config.php' and adjust details for production deployment.
+ */
+
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'money_tracker');
+
+// Security option: set to true to allow database seed/clear actions on public host deployments (e.g. portfolio demos)
+define('ALLOW_REMOTE_RESET', false);

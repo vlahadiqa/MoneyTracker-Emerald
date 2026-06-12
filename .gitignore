@@ -1,0 +1,24 @@
+# Database and Local Configuration
+config.php
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.directory
+
+# Server / Temporary / Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

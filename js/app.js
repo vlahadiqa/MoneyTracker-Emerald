@@ -94,13 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const optionsDate = { year: 'numeric', month: '2-digit', day: '2-digit' };
     currentDateEl.textContent = today.toLocaleDateString('id-ID', optionsDate);
 
-    // 2. Set default form date & time to now
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const hh = String(today.getHours()).padStart(2, '0');
-    const min = String(today.getMinutes()).padStart(2, '0');
-    inputDate.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    // 2. Set default form date & time to now (timezone-aware)
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const localNow = new Date(now.getTime() - offsetMs);
+    inputDate.value = localNow.toISOString().slice(0, 16);
 
     // 3. Attach form submit listener
     formTransaction.addEventListener('submit', handleAddTransaction);

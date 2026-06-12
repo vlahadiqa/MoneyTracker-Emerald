@@ -1,10 +1,14 @@
 // Money Tracker Application JS
 
 // Configuration
-const API_STATS = 'api/get_dashboard_data.php';
-const API_ADD = 'api/add_transaction.php';
-const API_DELETE = 'api/delete_transaction.php';
-const API_SETUP = 'setup.php';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE = isLocalhost ? '' : 'https://moneytracker-emerald-production.up.railway.app/';
+
+const API_STATS = API_BASE + 'api/get_dashboard_data.php';
+const API_ADD = API_BASE + 'api/add_transaction.php';
+const API_DELETE = API_BASE + 'api/delete_transaction.php';
+const API_SETUP = API_BASE + 'setup.php';
+const API_CLEAR = API_BASE + 'api/clear_data.php';
 
 const expenseCategories = [
     "Makanan & Minuman",
@@ -517,7 +521,7 @@ async function handleClearData() {
 
     try {
         showToast('Mengosongkan data...', 'warning');
-        const response = await fetch('api/clear_data.php');
+        const response = await fetch(API_CLEAR);
         const res = await response.json();
 
         if (response.ok && res.success) {

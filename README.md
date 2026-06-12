@@ -1,5 +1,7 @@
 # 💸 Emerald - Personal Expense Tracker
 
+> 🔗 **Live Demo:** [money-tracker-emerald.vercel.app](https://money-tracker-emerald.vercel.app)
+
 ## 🌙 Tentang Proyek
 Emerald adalah aplikasi web minimalis berdesain modern yang dirancang khusus untuk mencatat dan melacak pengeluaran keuangan harian secara instan, guna menghilangkan kebingungan finansial pribadi. 
 

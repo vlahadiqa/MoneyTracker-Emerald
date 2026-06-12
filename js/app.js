@@ -25,6 +25,7 @@ const incomeCategories = [
 
 // State variables
 let currentType = 'expense';
+let currentSession = null;
 
 // DOM Elements
 const currentDayEl = document.getElementById('current-day');
@@ -64,6 +65,18 @@ const tableWrapper = document.getElementById('table-wrapper');
 const tableBody = document.getElementById('table-body');
 const lblTotalCount = document.getElementById('lbl-total-count');
 
+// Auth elements
+const authContainer = document.getElementById('auth-container');
+const dashboardContainer = document.getElementById('dashboard-container');
+const headerAuthActions = document.getElementById('header-auth-actions');
+const userEmailDisplay = document.getElementById('user-email-display');
+const formAuth = document.getElementById('form-auth');
+const authEmail = document.getElementById('auth-email');
+const authPassword = document.getElementById('auth-password');
+const btnLogin = document.getElementById('btn-login');
+const btnRegister = document.getElementById('btn-register');
+const btnLogout = document.getElementById('btn-logout');
+
 // Initialize Dashboard
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Setup today's date displays
@@ -85,15 +98,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const min = String(today.getMinutes()).padStart(2, '0');
     inputDate.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 
-    // 3. Load dashboard data
-    fetchDashboardData();
-
-    // 4. Attach form submit listener
+    // 3. Attach form submit listener
     formTransaction.addEventListener('submit', handleAddTransaction);
 
-    // 5. Attach setup triggers
+    // 4. Attach setup triggers
     btnRunSetup.addEventListener('click', runDatabaseSetup);
     btnClearData.addEventListener('click', handleClearData);
+
+    // 5. Attach Auth event listeners
+    if (formAuth) formAuth.addEventListener('submit', handleLogin);
+    if (btnRegister) btnRegister.addEventListener('click', handleRegister);
+    if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+
+    // 6. Monitor Supabase Auth state changes
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentSession = session;
+        if (session) {
+            // Hide Auth container and show Dashboard container
+            if (authContainer) authContainer.classList.add('hidden');
+            if (dashboardContainer) dashboardContainer.classList.remove('hidden');
+            if (headerAuthActions) headerAuthActions.classList.remove('hidden');
+            
+            // Show logged in user email in the header
+            if (userEmailDisplay) {
+                userEmailDisplay.textContent = session.user.email;
+                userEmailDisplay.classList.remove('hidden');
+            }
+            
+            // Fetch dashboard data for this logged-in user
+            fetchDashboardData();
+        } else {
+            // Show Auth container and hide Dashboard container
+            if (authContainer) authContainer.classList.remove('hidden');
+            if (dashboardContainer) dashboardContainer.classList.add('hidden');
+            if (headerAuthActions) headerAuthActions.classList.add('hidden');
+            
+            if (userEmailDisplay) {
+                userEmailDisplay.textContent = '';
+                userEmailDisplay.classList.add('hidden');
+            }
+            
+            // Clear inputs
+            if (authEmail) authEmail.value = '';
+            if (authPassword) authPassword.value = '';
+            clearValidationErrors();
+        }
+    });
 });
 
 // Switch Transaction Type
@@ -143,13 +193,19 @@ function populateCategories(categories) {
 
 // Fetch dashboard stats & transactions
 async function fetchDashboardData() {
+    if (!currentSession || !currentSession.user) {
+        showLedgerState('empty');
+        return;
+    }
+    
     showLedgerState('loading');
     
     try {
-        // 1. Fetch transactions from Supabase
+        // 1. Fetch transactions from Supabase (filtered by current user)
         const { data: transactions, error } = await supabaseClient
             .from('transactions')
             .select('*')
+            .eq('user_id', currentSession.user.id)
             .order('date', { ascending: false });
 
         if (error) {
@@ -332,18 +388,22 @@ async function handleAddTransaction(e) {
     // Format datetime-local format to ISO standard for Supabase
     const formattedDate = new Date(dateVal).toISOString();
 
+    const txData = {
+        amount,
+        type,
+        category,
+        date: formattedDate,
+        description: description || null
+    };
+
+    if (currentSession && currentSession.user) {
+        txData.user_id = currentSession.user.id;
+    }
+
     try {
         const { error } = await supabaseClient
             .from('transactions')
-            .insert([
-                {
-                    amount,
-                    type,
-                    category,
-                    date: formattedDate,
-                    description: description || null
-                }
-            ]);
+            .insert([txData]);
 
         if (error) {
             throw error;
@@ -373,10 +433,16 @@ async function handleDeleteTransaction(id) {
     }
 
     try {
-        const { error } = await supabaseClient
+        const query = supabaseClient
             .from('transactions')
             .delete()
             .eq('id', id);
+
+        if (currentSession && currentSession.user) {
+            query.eq('user_id', currentSession.user.id);
+        }
+
+        const { error } = await query;
 
         if (error) {
             throw error;
@@ -473,10 +539,19 @@ async function runDatabaseSetup() {
             }
         ];
 
-        // Insert into Supabase
+        // Insert into Supabase (assign current user id to mock transactions)
+        const userId = currentSession && currentSession.user ? currentSession.user.id : null;
+        const mockTransactionsWithUser = mockTransactions.map(tx => {
+            const newTx = { ...tx };
+            if (userId) {
+                newTx.user_id = userId;
+            }
+            return newTx;
+        });
+
         const { error } = await supabaseClient
             .from('transactions')
-            .insert(mockTransactions);
+            .insert(mockTransactionsWithUser);
 
         if (error) {
             throw error;
@@ -641,11 +716,18 @@ async function handleClearData() {
     try {
         showToast('Mengosongkan data...', 'warning');
         
-        // Deletes all rows in Supabase safely
-        const { error } = await supabaseClient
+        // Deletes only the logged-in user's transactions safely
+        const query = supabaseClient
             .from('transactions')
-            .delete()
-            .neq('id', 0);
+            .delete();
+
+        if (currentSession && currentSession.user) {
+            query.eq('user_id', currentSession.user.id);
+        } else {
+            query.neq('id', 0);
+        }
+
+        const { error } = await query;
 
         if (error) {
             throw error;
@@ -672,4 +754,112 @@ function isSameWeek(txDate, refDate) {
     sunday.setHours(23, 59, 59, 999);
 
     return txDate >= monday && txDate <= sunday;
+}
+
+// ==========================================
+// Authentication Handlers
+// ==========================================
+
+async function handleLogin(e) {
+    if (e) e.preventDefault();
+    clearValidationErrors();
+
+    if (!authEmail || !authPassword) return;
+    
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    
+    if (!email || !password) {
+        showToast('Email dan password wajib diisi.', 'error');
+        return;
+    }
+    
+    const originalBtnText = btnLogin ? btnLogin.innerHTML : 'Masuk';
+    if (btnLogin) {
+        btnLogin.disabled = true;
+        btnLogin.innerHTML = 'Memproses...';
+    }
+    
+    try {
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (error) throw error;
+        
+        showToast('Berhasil masuk!', 'success');
+    } catch (error) {
+        console.error('Login error:', error);
+        showToast(error.message || 'Gagal masuk. Silakan periksa email/password Anda.', 'error');
+    } finally {
+        if (btnLogin) {
+            btnLogin.disabled = false;
+            btnLogin.innerHTML = originalBtnText;
+        }
+    }
+}
+
+async function handleRegister(e) {
+    if (e) e.preventDefault();
+    clearValidationErrors();
+
+    if (!authEmail || !authPassword) return;
+    
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    
+    if (!email || !password) {
+        showToast('Email dan password wajib diisi.', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showToast('Password minimal harus 6 karakter.', 'error');
+        return;
+    }
+    
+    const originalBtnText = btnRegister ? btnRegister.innerHTML : 'Daftar Akun Baru';
+    if (btnRegister) {
+        btnRegister.disabled = true;
+        btnRegister.innerHTML = 'Memproses...';
+    }
+    
+    try {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password
+        });
+        
+        if (error) throw error;
+        
+        if (data.user && data.session === null) {
+            showToast('Pendaftaran berhasil! Silakan konfirmasi pendaftaran melalui email Anda.', 'warning');
+        } else {
+            showToast('Pendaftaran berhasil! Anda telah otomatis masuk.', 'success');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showToast(error.message || 'Gagal mendaftar akun baru.', 'error');
+    } finally {
+        if (btnRegister) {
+            btnRegister.disabled = false;
+            btnRegister.innerHTML = originalBtnText;
+        }
+    }
+}
+
+async function handleLogout() {
+    if (!confirm('Apakah Anda yakin ingin keluar dari aplikasi?')) {
+        return;
+    }
+    
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        showToast('Berhasil keluar.', 'success');
+    } catch (error) {
+        console.error('Logout error:', error);
+        showToast(error.message || 'Gagal keluar dari aplikasi.', 'error');
+    }
 }

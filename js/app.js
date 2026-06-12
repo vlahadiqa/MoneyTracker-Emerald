@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://wtkrqokdenvztpoimqao.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_HfUJvh216mXGrUIw7etc5Q_Yjwl5kBO';
 
 const { createClient } = window.supabase;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const expenseCategories = [
     "Makanan & Minuman",
@@ -147,7 +147,7 @@ async function fetchDashboardData() {
     
     try {
         // 1. Fetch transactions from Supabase
-        const { data: transactions, error } = await supabase
+        const { data: transactions, error } = await supabaseClient
             .from('transactions')
             .select('*')
             .order('date', { ascending: false });
@@ -333,7 +333,7 @@ async function handleAddTransaction(e) {
     const formattedDate = new Date(dateVal).toISOString();
 
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('transactions')
             .insert([
                 {
@@ -373,7 +373,7 @@ async function handleDeleteTransaction(id) {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('transactions')
             .delete()
             .eq('id', id);
@@ -474,7 +474,7 @@ async function runDatabaseSetup() {
         ];
 
         // Insert into Supabase
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('transactions')
             .insert(mockTransactions);
 
@@ -642,7 +642,7 @@ async function handleClearData() {
         showToast('Mengosongkan data...', 'warning');
         
         // Deletes all rows in Supabase safely
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('transactions')
             .delete()
             .neq('id', 0);

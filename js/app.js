@@ -604,7 +604,15 @@ function formatCurrency(amount) {
 // Helper: Format DB ISO Date to readable string
 function formatDateString(dateStr) {
     if (!dateStr) return '';
-    const dateObj = new Date(dateStr);
+    
+    // Normalize date strings that lack timezone offset/indicator from PostgreSQL TIMESTAMP column
+    let normalized = dateStr;
+    if (typeof normalized === 'string' && !normalized.endsWith('Z') && !normalized.includes('+') && !normalized.includes('-')) {
+        // PostgREST space separator in timezone-less TIMESTAMP representation check
+        normalized = normalized.replace(' ', 'T') + 'Z';
+    }
+    
+    const dateObj = new Date(normalized);
     
     // Check if valid date
     if (isNaN(dateObj.getTime())) return dateStr;

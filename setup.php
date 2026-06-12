@@ -1,20 +1,31 @@
 <?php
 header('Content-Type: text/plain');
 
-// Load custom config or fallback to local defaults
+// Load custom config or fallback to env/local defaults
 $configFile = __DIR__ . '/config.php';
 if (file_exists($configFile)) {
     require_once $configFile;
-} else {
-    define('DB_HOST', 'localhost');
-    define('DB_USER', 'root');
-    define('DB_PASS', '');
-    define('DB_NAME', 'money_tracker');
-    define('ALLOW_REMOTE_RESET', false);
 }
 
+if (!defined('DB_HOST')) {
+    define('DB_HOST', getenv('MYSQLHOST') ?: (getenv('DB_HOST') ?: 'localhost'));
+}
+if (!defined('DB_USER')) {
+    define('DB_USER', getenv('MYSQLUSER') ?: (getenv('DB_USER') ?: 'root'));
+}
+if (!defined('DB_PASS')) {
+    $envPass = getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : getenv('DB_PASS');
+    define('DB_PASS', $envPass !== false ? $envPass : '');
+}
+if (!defined('DB_NAME')) {
+    define('DB_NAME', getenv('MYSQLDATABASE') ?: (getenv('DB_NAME') ?: 'money_tracker'));
+}
+if (!defined('DB_PORT')) {
+    define('DB_PORT', getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: '3306'));
+}
 if (!defined('ALLOW_REMOTE_RESET')) {
-    define('ALLOW_REMOTE_RESET', false);
+    $envReset = getenv('ALLOW_REMOTE_RESET');
+    define('ALLOW_REMOTE_RESET', $envReset !== false ? (filter_var($envReset, FILTER_VALIDATE_BOOLEAN)) : false);
 }
 
 // Security: Prevent remote execution of setup.php in production unless explicitly allowed
@@ -29,19 +40,25 @@ $host = DB_HOST;
 $user = DB_USER;
 $pass = DB_PASS;
 $dbName = DB_NAME;
+$port = DB_PORT;
 
 try {
-    // 1. Connect to MySQL server (without selecting DB)
-    echo "Connecting to MySQL server at $host...\n";
-    $pdo = new PDO("mysql:host=$host", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    // 2. Create database
-    echo "Creating database '$dbName' if it doesn't exist...\n";
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    
-    // 3. Connect to the specific database
-    $pdo->exec("USE `$dbName`");
+    // 1. Connect to MySQL server
+    try {
+        echo "Connecting to MySQL server at $host:$port...\n";
+        $pdo = new PDO("mysql:host=$host;port=$port", $user, $pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        
+        // 2. Create database
+        echo "Creating database '$dbName' if it doesn't exist...\n";
+        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $pdo->exec("USE `$dbName`");
+    } catch (PDOException $e) {
+        // Fallback for hosting platforms where DB is pre-created and CREATE DATABASE is blocked
+        echo "Connecting directly to database '$dbName' as fallback...\n";
+        $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbName", $user, $pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
     echo "Selected database '$dbName'.\n";
 
     // 4. Create table

@@ -1,8 +1,8 @@
 // Money Tracker Application JS - Supabase JAMstack Version
 
 // Configuration
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_KEY';
+const SUPABASE_URL = 'https://wtkrqokdenvztpoimqao.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_HfUJvh216mXGrUIw7etc5Q_Yjwl5kBO';
 
 const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

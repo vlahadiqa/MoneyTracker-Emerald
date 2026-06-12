@@ -1,29 +1,112 @@
-# Emerald - Personal Expense Tracker
+# 💸 Emerald - Personal Expense Tracker
 
-**Ringkasan Proyek:** Sebuah aplikasi web minimalis berdesain modern yang dirancang khusus untuk mencatat dan melacak pengeluaran keuangan harian secara instan, guna menghilangkan kebingungan finansial pribadi.
+## 🌙 Tentang Proyek
+Emerald adalah aplikasi web minimalis berdesain modern yang dirancang khusus untuk mencatat dan melacak pengeluaran keuangan harian secara instan, guna menghilangkan kebingungan finansial pribadi. 
 
-* **Jenis Proyek:** Proyek Mandiri (Self-initiated Project)
-* **Peran:** Full-Stack Developer & UI/UX Designer (Individual Project)
-* **Kreator:** Vlahadiqa Runayasha Khandeva Wardana
+Proyek ini lahir dari kebutuhan nyata (*dogfooding*): banyak aplikasi pencatat keuangan di luar sana yang menawarkan fitur terlalu rumit (akuntansi ganda, investasi, grafik kompleks). Emerald mengusung filosofi *Essentialism*—menyelesaikan satu masalah spesifik dengan pendekatan yang berpusat pada kenyamanan pengguna dan beban kognitif yang minim.
 
 ---
 
-### 1. The "Why" (Latar Belakang & Motivasi)
-Aplikasi ini lahir sepenuhnya dari masalah nyata yang saya hadapi sehari-hari. Saya sering kali merasa kebingungan dan kesulitan saat harus menghitung atau mengingat kembali ke mana perginya uang saya dalam sehari. Banyak aplikasi pencatat keuangan di luar sana yang menawarkan fitur terlalu rumit, seperti akuntansi ganda, pelacakan investasi, atau grafik performa yang membingungkan. Padahal, kebutuhan dasar saya setiap harinya sangat sederhana: sebuah alat pencatat yang cepat, efisien, dan tanpa beban kognitif yang besar saat digunakan.
+## ✨ Fitur Utama
 
-Didorong oleh filosofi *Essentialism*, saya membangun Emerald untuk menyelesaikan satu masalah spesifik tersebut dengan pendekatan yang berpusat pada kenyamanan pengguna (*user empathy*). Proyek ini merupakan wujud nyata dari metode *dogfooding*, di mana saya bertindak sebagai pengembang sekaligus pengguna utama yang merasakan langsung dampaknya dalam merapikan catatan finansial pribadi setiap hari.
+| Fitur | Deskripsi |
+| :--- | :--- |
+| ⚡ **Pencatatan Real-time** | Data pengeluaran tersimpan dan tersinkronisasi instan via Supabase. |
+| 📊 **Kalkulasi Otomatis** | Ringkasan dinamis untuk pengeluaran Hari Ini, Minggu Ini, dan Bulan Ini. |
+| 🕰️ **Input Waktu Riil** | Mendukung pencatatan presisi hingga satuan jam dan menit. |
+| 🔄 **Dual-State Management** | Dilengkapi tombol *Isi Data Simulasi* untuk demo dan *Kosongkan Data* untuk penggunaan riil (*Empty State*). |
+| 📱 **Responsive UI** | Tata letak *Mobile-First* yang optimal diakses via *browser* HP saat bepergian. |
+| 🎨 **Glassmorphism UI** | Antarmuka tembus pandang bergaya iOS yang memberikan kesan premium dan menenangkan. |
 
-### 2. The "How" (Proses Pengembangan & Tantangan)
-Untuk menjawab masalah kebingungan mencatat pengeluaran harian tersebut, seluruh proses pengembangan teknis dan arsitektur desain aplikasi ini sengaja diarahkan untuk mempermudah penggunaan di dunia nyata:
+---
 
-* **Optimasi Tampilan Ponsel (Mobile-First Mindset):** Karena saya harus bisa mencatat pengeluaran di sela-sela aktivitas harian secara instan (tepat setelah membeli makan atau membayar ongkos transportasi), antarmuka Tailwind CSS dirancang agar sepenuhnya responsif di layar HP. Penggunaan efek *Glassmorphism* (`backdrop-blur-md` dan `bg-white/10`) memberikan estetika modern yang menenangkan tanpa mengorbankan kecepatan muat halaman saat diakses di luar rumah.
-* **Fitur Pencatatan Waktu (Jam & Menit) secara Riil:** Kebingungan melacak uang sering terjadi karena beberapa pengeluaran dilakukan pada hari yang sama namun di waktu berbeda. Oleh karena itu, saya mengubah input tanggal menjadi format waktu riil (`datetime-local`) dan menyesuaikan database MySQL menjadi `DATETIME`. Dengan begitu, pengeluaran "Makan Siang" dan "Kopi Sore" dapat terpisah secara akurat, membantu saya mengingat kembali alur aktivitas finansial dengan sangat mudah.
-* **Sistem Fleksibilitas Status (Dual-State Management):** Agar aplikasi ini siap bertransisi dari sekadar bahan demonstrasi menjadi alat pakai nyata sehari-hari, saya membangun logika *asynchronous JavaScript* khusus. Aplikasi memiliki tombol simulasi untuk kebutuhan pengujian visual, sekaligus tombol "Kosongkan Data" yang secara instan membersihkan database (*Empty State*) menjadi lembaran bersih siap pakai untuk mencatat pengeluaran asli saya tanpa tercampur data fiktif.
-* **Pemisahan Logika yang Ringan (Clean Backend):** Agar proses input data tidak terhambat oleh *loading* yang lama di HP, saya memisahkan tampilan HTML dengan pemrosesan PHP murni via *Fetch API*. Data nominal otomatis diformat menjadi Rupiah di layar menggunakan JavaScript agar tidak terjadi salah ketik angka, namun dikirim sebagai angka murni ke database agar pemrosesan data berjalan secepat kilat.
+## 🎯 Problem & Solution
 
-### 3. The "What" (Hasil & Dampak)
-Emerald berhasil bertransformasi menjadi sebuah solusi digital pribadi yang adaptif, ringan, dan bebas hambatan. Aplikasi ini secara dinamis mampu mengkalkulasi total pengeluaran berdasarkan kategori waktu (Hari Ini, Minggu Ini, Bulan Ini) secara akurat dari database MySQL. Dampak terbesar yang saya rasakan secara personal adalah hilangnya rasa cemas dan kebingungan dalam melacak arus keluar uang harian; saya kini memiliki kendali penuh dan visibilitas total terhadap setiap Rupiah yang dikeluarkan langsung dari genggaman ponsel saya.
+**Problem**
+Aplikasi finansial konvensional sering terasa membebani karena fitur yang membengkak (*feature bloat*). Pengguna hanya ingin menjawab satu pertanyaan sederhana setiap harinya: *"Ke mana perginya uang saya hari ini?"* namun dihadapkan pada kurva pembelajaran yang rumit.
 
-### 4. Pelajaran yang Dipetik (Learnings & Reflection)
-* **Kedewasaan Menentukan Ruang Lingkup (*The Power of Scoping*):** Menahan diri untuk tidak membuat fitur pemasukan atau perhitungan utang yang rumit adalah keputusan desain terbaik. Fokus pada satu masalah utama (pelacakan pengeluaran harian) justru menghasilkan produk yang jauh lebih fungsional, rapi, dan benar-benar terpakai setiap hari.
-* **Craftsmanship dalam Menyelesaikan Masalah Pribadi:** Membangun aplikasi untuk kebutuhan diri sendiri (*dogfooding*) mengajarkan saya bahwa kualitas sebuah perangkat lunak tidak hanya dinilai dari kecanggihan fiturnya, melainkan seberapa baik detail *micro-interaction* (seperti *scrollbar* tipis ala iOS dan kerapatan *padding* tabel) mampu mereduksi kebingungan pengguna saat berinteraksi dengan data harian mereka.
+**Solution**
+Emerald menghadirkan antarmuka esensial tanpa fitur pemasukan atau utang yang rumit. Dengan fokus 100% pada pelacakan pengeluaran harian, dipadukan dengan desain *Glassmorphism* dan optimasi penggunaan di ponsel, pengguna dapat mencatat transaksi kurang dari 5 detik setelah berbelanja.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** HTML5, JavaScript (Vanilla ES6)
+- **Styling:** Tailwind CSS (Utility-first)
+- **Backend / Database:** Supabase (PostgreSQL, JS Client)
+- **Deployment:** Vercel
+
+---
+
+## 📂 Struktur Proyek
+
+```text
+📦 emerald-tracker
+ ┣ 📜 index.html      # Struktur utama dan antarmuka Glassmorphism
+ ┣ 📜 app.js          # Logika kalkulasi, state management, dan koneksi Supabase
+ ┗ 📜 README.md       # Dokumentasi proyek
+```
+
+---
+
+## 🚀 Cara Menjalankan Secara Lokal
+
+**Prerequisites**
+- *Browser* modern (Chrome/Safari/Firefox)
+- Akun [Supabase](https://supabase.com/)
+
+**Instalasi**
+
+```bash
+# Clone repository
+git clone [https://github.com/vlahadiqa/emerald-tracker.git](https://github.com/vlahadiqa/emerald-tracker.git)
+cd emerald-tracker
+```
+
+**Konfigurasi Keamanan (Environment Variables)**
+Demi keamanan, jangan pernah mengunggah file yang berisi Supabase URL and Anon Key asli Anda ke public repository. Simpan kredensial Anda dengan aman di pengaturan Environment Variables pada platform hosting Anda (seperti Vercel).
+
+---
+
+## 🗄️ Database & Security Setup
+
+Jalankan *script* SQL berikut di **Supabase SQL Editor** Anda untuk membuat tabel transaksi beserta sistem keamanannya:
+
+```sql
+-- 1. Buat Tabel
+CREATE TABLE transactions (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  amount NUMERIC NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  date TIMESTAMP NOT NULL,
+  description TEXT
+);
+
+-- 2. Aktifkan Row Level Security (MANDATORY UNTUK KEAMANAN)
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+-- Catatan Penting: 
+-- Setelah menjalankan script ini, pastikan Anda membuat RLS Policies di dashboard Supabase.
+-- Jika tidak ada policy yang dibuat, database akan menolak semua akses dari luar secara default (Aman).
+```
+
+---
+
+## 📝 Penggunaan (Usage)
+
+1. Buka aplikasi melalui *browser* HP atau desktop.
+2. Pada panel **Tambah Transaksi**, masukkan nominal uang.
+3. Pilih kategori pengeluaran (misal: Makanan & Minuman, Transportasi).
+4. Sesuaikan tanggal dan waktu secara spesifik.
+5. Berikan deskripsi singkat (opsional), lalu klik **Simpan Transaksi**.
+6. Angka di kartu ringkasan (Atas) akan terbarui secara *real-time*.
+
+---
+
+## 🎨 Design Philosophy
+
+Tema *Glassmorphism* dengan palet warna hijau tua (Emerald) dirancang khusus untuk psikologi pengguna:
+- **Warna Emerald (Zamrud):** Melambangkan stabilitas finansial, kejernihan (*clarity*), dan pertumbuhan.
+- **Glassmorphism:** Memberikan hierarki visual yang jelas tanpa memblokir ruang, membuat aplikasi terasa ringan (*lightweight*) dan modern.
+- **Micro-interactions:** Penggunaan *scrollbar* tipis ala iOS dan *padding* tabel yang longgar ditujukan untuk mereduksi kebingungan visual pengguna saat membaca riwayat data.

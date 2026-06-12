@@ -4,7 +4,7 @@
 
 * **Jenis Proyek:** Proyek Mandiri (Self-initiated Project)
 * **Peran:** Full-Stack Developer & UI/UX Designer (Individual Project)
-* **Kreator:** @vlahadiqa
+* **Kreator:** Vlahadiqa Runayasha Khandeva Wardana
 
 ---
 

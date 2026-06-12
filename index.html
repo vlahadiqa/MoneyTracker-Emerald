@@ -133,8 +133,8 @@
         <div class="w-full max-w-md mx-auto px-6">
             <div class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-8 flex flex-col gap-6 animate-fade-in">
                 <div class="text-center border-b border-white/20 pb-4">
-                    <h2 class="text-2xl font-bold text-white tracking-tight">Selamat Datang</h2>
-                    <p class="text-xs text-gray-300 mt-1 font-medium">Masuk atau daftar akun Emerald Anda</p>
+                    <h2 id="auth-title" class="text-2xl font-bold text-white tracking-tight">Masuk ke Emerald</h2>
+                    <p class="text-xs text-gray-300 mt-1 font-medium">Melacak pengeluaran keuangan dengan presisi</p>
                 </div>
                 <form id="form-auth" class="flex flex-col gap-5">
                     <!-- Email Field -->
@@ -149,15 +149,18 @@
                         <input type="password" id="auth-password" required placeholder="••••••••" class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-white/50 focus:ring-0 placeholder:text-gray-400/50 transition-all font-medium text-sm">
                     </div>
 
-                    <!-- Action Buttons -->
+                    <!-- Action Button -->
                     <div class="flex flex-col gap-3 mt-2">
-                        <button type="submit" id="btn-login" class="w-full py-3.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold rounded-xl transition-all duration-200 hover:-translate-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center gap-2">
+                        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold rounded-xl transition-all duration-200 hover:-translate-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center gap-2">
                             Masuk
                         </button>
-                        <button type="button" id="btn-register" class="w-full py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                            Daftar Akun Baru
-                        </button>
                     </div>
+
+                    <!-- Toggle Link -->
+                    <p class="text-xs text-center text-gray-300 mt-2 font-medium">
+                        <span id="auth-toggle-text">Belum punya akun?</span>
+                        <span id="auth-toggle-link" class="text-emerald-300 hover:text-emerald-400 font-bold cursor-pointer underline transition-colors ml-1">Daftar di sini</span>
+                    </p>
                 </form>
             </div>
         </div>

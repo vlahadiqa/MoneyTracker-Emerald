@@ -26,6 +26,7 @@ const incomeCategories = [
 // State variables
 let currentType = 'expense';
 let currentSession = null;
+let isLoginMode = true;
 
 // DOM Elements
 const currentDayEl = document.getElementById('current-day');
@@ -73,9 +74,12 @@ const userEmailDisplay = document.getElementById('user-email-display');
 const formAuth = document.getElementById('form-auth');
 const authEmail = document.getElementById('auth-email');
 const authPassword = document.getElementById('auth-password');
-const btnLogin = document.getElementById('btn-login');
-const btnRegister = document.getElementById('btn-register');
 const btnLogout = document.getElementById('btn-logout');
+
+const authTitle = document.getElementById('auth-title');
+const authSubmitBtn = document.getElementById('auth-submit-btn');
+const authToggleText = document.getElementById('auth-toggle-text');
+const authToggleLink = document.getElementById('auth-toggle-link');
 
 // Initialize Dashboard
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,8 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnClearData.addEventListener('click', handleClearData);
 
     // 5. Attach Auth event listeners
-    if (formAuth) formAuth.addEventListener('submit', handleLogin);
-    if (btnRegister) btnRegister.addEventListener('click', handleRegister);
+    if (formAuth) formAuth.addEventListener('submit', handleAuthSubmit);
+    if (authToggleLink) authToggleLink.addEventListener('click', toggleAuthMode);
     if (btnLogout) btnLogout.addEventListener('click', handleLogout);
 
     // 6. Monitor Supabase Auth state changes
@@ -138,6 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 userEmailDisplay.classList.add('hidden');
             }
             
+            // Revert to login mode on initial check or sign out
+            isLoginMode = true;
+            updateAuthModeUI();
+
             // Clear inputs
             if (authEmail) authEmail.value = '';
             if (authPassword) authPassword.value = '';
@@ -760,47 +768,29 @@ function isSameWeek(txDate, refDate) {
 // Authentication Handlers
 // ==========================================
 
-async function handleLogin(e) {
-    if (e) e.preventDefault();
+function toggleAuthMode() {
+    isLoginMode = !isLoginMode;
+    updateAuthModeUI();
     clearValidationErrors();
+}
 
-    if (!authEmail || !authPassword) return;
-    
-    const email = authEmail.value.trim();
-    const password = authPassword.value;
-    
-    if (!email || !password) {
-        showToast('Email dan password wajib diisi.', 'error');
-        return;
-    }
-    
-    const originalBtnText = btnLogin ? btnLogin.innerHTML : 'Masuk';
-    if (btnLogin) {
-        btnLogin.disabled = true;
-        btnLogin.innerHTML = 'Memproses...';
-    }
-    
-    try {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password
-        });
-        
-        if (error) throw error;
-        
-        showToast('Berhasil masuk!', 'success');
-    } catch (error) {
-        console.error('Login error:', error);
-        showToast(error.message || 'Gagal masuk. Silakan periksa email/password Anda.', 'error');
-    } finally {
-        if (btnLogin) {
-            btnLogin.disabled = false;
-            btnLogin.innerHTML = originalBtnText;
-        }
+function updateAuthModeUI() {
+    if (!authTitle || !authSubmitBtn || !authToggleText || !authToggleLink) return;
+
+    if (isLoginMode) {
+        authTitle.textContent = "Masuk ke Emerald";
+        authSubmitBtn.textContent = "Masuk";
+        authToggleText.textContent = "Belum punya akun?";
+        authToggleLink.textContent = "Daftar di sini";
+    } else {
+        authTitle.textContent = "Daftar Akun Baru";
+        authSubmitBtn.textContent = "Daftar";
+        authToggleText.textContent = "Sudah punya akun?";
+        authToggleLink.textContent = "Masuk di sini";
     }
 }
 
-async function handleRegister(e) {
+async function handleAuthSubmit(e) {
     if (e) e.preventDefault();
     clearValidationErrors();
 
@@ -813,38 +803,50 @@ async function handleRegister(e) {
         showToast('Email dan password wajib diisi.', 'error');
         return;
     }
-    
-    if (password.length < 6) {
+
+    if (!isLoginMode && password.length < 6) {
         showToast('Password minimal harus 6 karakter.', 'error');
         return;
     }
     
-    const originalBtnText = btnRegister ? btnRegister.innerHTML : 'Daftar Akun Baru';
-    if (btnRegister) {
-        btnRegister.disabled = true;
-        btnRegister.innerHTML = 'Memproses...';
+    const originalBtnText = authSubmitBtn ? authSubmitBtn.innerHTML : (isLoginMode ? 'Masuk' : 'Daftar');
+    if (authSubmitBtn) {
+        authSubmitBtn.disabled = true;
+        authSubmitBtn.innerHTML = 'Memproses...';
     }
     
     try {
-        const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password
-        });
-        
-        if (error) throw error;
-        
-        if (data.user && data.session === null) {
-            showToast('Pendaftaran berhasil! Silakan konfirmasi pendaftaran melalui email Anda.', 'warning');
+        if (isLoginMode) {
+            // Login Mode
+            const { error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+            
+            if (error) throw error;
+            showToast('Berhasil masuk!', 'success');
         } else {
-            showToast('Pendaftaran berhasil! Anda telah otomatis masuk.', 'success');
+            // Register Mode
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password
+            });
+            
+            if (error) throw error;
+            
+            if (data.user && data.session === null) {
+                showToast('Pendaftaran berhasil! Silakan konfirmasi pendaftaran melalui email Anda.', 'warning');
+            } else {
+                showToast('Pendaftaran berhasil! Anda telah otomatis masuk.', 'success');
+            }
         }
     } catch (error) {
-        console.error('Registration error:', error);
-        showToast(error.message || 'Gagal mendaftar akun baru.', 'error');
+        console.error('Authentication error:', error);
+        showToast(error.message || 'Gagal memproses permintaan Anda.', 'error');
     } finally {
-        if (btnRegister) {
-            btnRegister.disabled = false;
-            btnRegister.innerHTML = originalBtnText;
+        if (authSubmitBtn) {
+            authSubmitBtn.disabled = false;
+            authSubmitBtn.innerHTML = originalBtnText;
         }
     }
 }

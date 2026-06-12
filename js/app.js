@@ -604,24 +604,21 @@ function formatCurrency(amount) {
 // Helper: Format DB ISO Date to readable string
 function formatDateString(dateStr) {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
+    const dateObj = new Date(dateStr);
     
     // Check if valid date
-    if (isNaN(date.getTime())) return dateStr;
+    if (isNaN(dateObj.getTime())) return dateStr;
     
-    const formattedDate = date.toLocaleDateString('id-ID', {
-        day: 'numeric',
+    const formattedDate = dateObj.toLocaleDateString('id-ID', {
+        day: '2-digit',
         month: 'short',
-        year: 'numeric'
-    });
-    
-    const formattedTime = date.toLocaleTimeString('id-ID', {
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
-    });
-    
-    return `${formattedDate}, ${formattedTime}`;
+    }).replace(':', '.');
+
+    return formattedDate;
 }
 
 // Helper: Toast alerts generator

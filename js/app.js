@@ -607,7 +607,7 @@ function formatDateString(dateStr) {
     
     // Normalize date strings that lack timezone offset/indicator from PostgreSQL TIMESTAMP column
     let normalized = dateStr;
-    if (typeof normalized === 'string' && !normalized.endsWith('Z') && !normalized.includes('+') && !normalized.includes('-')) {
+    if (typeof normalized === 'string' && !normalized.endsWith('Z') && !normalized.includes('+', 10) && !normalized.includes('-', 10)) {
         // PostgREST space separator in timezone-less TIMESTAMP representation check
         normalized = normalized.replace(' ', 'T') + 'Z';
     }

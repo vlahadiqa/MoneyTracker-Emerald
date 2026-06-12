@@ -1,14 +1,11 @@
-// Money Tracker Application JS
+// Money Tracker Application JS - Supabase JAMstack Version
 
 // Configuration
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_BASE = isLocalhost ? '' : 'https://moneytracker-emerald-production.up.railway.app/';
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_KEY';
 
-const API_STATS = API_BASE + 'api/get_dashboard_data.php';
-const API_ADD = API_BASE + 'api/add_transaction.php';
-const API_DELETE = API_BASE + 'api/delete_transaction.php';
-const API_SETUP = API_BASE + 'setup.php';
-const API_CLEAR = API_BASE + 'api/clear_data.php';
+const { createClient } = window.supabase;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const expenseCategories = [
     "Makanan & Minuman",
@@ -149,26 +146,58 @@ async function fetchDashboardData() {
     showLedgerState('loading');
     
     try {
-        const response = await fetch(API_STATS);
-        
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.message || `HTTP error! Status: ${response.status}`);
+        // 1. Fetch transactions from Supabase
+        const { data: transactions, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('date', { ascending: false });
+
+        if (error) {
+            throw error;
         }
 
-        const res = await response.json();
-        
-        if (res.success) {
-            updateDashboardUI(res.data);
-            bannerDbStatus.classList.add('hidden');
-            btnRunSetup.classList.remove('hidden');
-            btnClearData.classList.remove('hidden');
-        } else {
-            throw new Error(res.message || 'Unknown server error');
-        }
+        // 2. Perform client-side stats aggregation (Today, This Week, This Month)
+        const today = new Date();
+        let spendingToday = 0;
+        let spendingWeek = 0;
+        let spendingMonth = 0;
+
+        transactions.forEach(tx => {
+            if (tx.type === 'expense') {
+                const txDate = new Date(tx.date);
+                const amount = parseFloat(tx.amount) || 0;
+
+                // Check if Today
+                if (txDate.toDateString() === today.toDateString()) {
+                    spendingToday += amount;
+                }
+
+                // Check if This Month
+                if (txDate.getFullYear() === today.getFullYear() && txDate.getMonth() === today.getMonth()) {
+                    spendingMonth += amount;
+                }
+
+                // Check if This Week (Week starting Monday)
+                if (isSameWeek(txDate, today)) {
+                    spendingWeek += amount;
+                }
+            }
+        });
+
+        // 3. Update UI
+        updateDashboardUI({
+            spending_today: spendingToday,
+            spending_week: spendingWeek,
+            spending_month: spendingMonth,
+            transactions: transactions
+        });
+
+        bannerDbStatus.classList.add('hidden');
+        btnRunSetup.classList.remove('hidden');
+        btnClearData.classList.remove('hidden');
     } catch (error) {
         console.error('Fetch dashboard failed:', error);
-        showToast(error.message || 'Gagal terhubung ke database. Harap jalankan pengaturan database.', 'error');
+        showToast(error.message || 'Gagal terhubung ke Supabase. Harap periksa kredensial Anda.', 'error');
         
         // Show banner to guide user to setup
         bannerDbStatus.classList.remove('hidden');
@@ -275,46 +304,63 @@ async function handleAddTransaction(e) {
         Menyimpan...
     `;
 
-    const payload = {
-        amount: parseFloat(inputAmount.value),
-        type: inputType.value,
-        category: inputCategory.value,
-        date: inputDate.value,
-        description: inputDescription.value
-    };
+    const amount = parseFloat(inputAmount.value);
+    const type = inputType.value;
+    const category = inputCategory.value;
+    const dateVal = inputDate.value;
+    const description = inputDescription.value.trim();
+
+    // Client-side validation fallback
+    const errors = {};
+    if (isNaN(amount) || amount <= 0) {
+        errors.amount = 'Nominal harus berupa angka positif.';
+    }
+    if (!category) {
+        errors.category = 'Kategori wajib diisi.';
+    }
+    if (!dateVal) {
+        errors.date = 'Tanggal & waktu wajib diisi.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+        displayValidationErrors(errors);
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalBtnContent;
+        return;
+    }
+
+    // Format datetime-local format to ISO standard for Supabase
+    const formattedDate = new Date(dateVal).toISOString();
 
     try {
-        const response = await fetch(API_ADD, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
+        const { error } = await supabase
+            .from('transactions')
+            .insert([
+                {
+                    amount,
+                    type,
+                    category,
+                    date: formattedDate,
+                    description: description || null
+                }
+            ]);
 
-        const res = await response.json();
-
-        if (response.ok && res.success) {
-            showToast(res.message || 'Transaction saved successfully!', 'success');
-            
-            // Clear inputs (keeping type and date intact)
-            inputAmount.value = '';
-            inputDescription.value = '';
-            
-            // Reload dashboard data
-            fetchDashboardData();
-        } else {
-            // Handle validation errors from backend
-            if (res.errors) {
-                displayValidationErrors(res.errors);
-            }
-            throw new Error(res.message || 'Failed to add transaction.');
+        if (error) {
+            throw error;
         }
+
+        showToast('Transaksi berhasil ditambahkan!', 'success');
+        
+        // Clear inputs (keeping type and date intact)
+        inputAmount.value = '';
+        inputDescription.value = '';
+        
+        // Reload dashboard data
+        fetchDashboardData();
     } catch (error) {
         console.error('Add transaction failed:', error);
-        showToast(error.message, 'error');
+        showToast(error.message || 'Gagal menyimpan transaksi.', 'error');
     } finally {
-        // Restore button state
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = originalBtnContent;
     }
@@ -327,25 +373,20 @@ async function handleDeleteTransaction(id) {
     }
 
     try {
-        const response = await fetch(API_DELETE, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: id })
-        });
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', id);
 
-        const res = await response.json();
-
-        if (response.ok && res.success) {
-            showToast(res.message || 'Transaction successfully deleted.', 'success');
-            fetchDashboardData();
-        } else {
-            throw new Error(res.message || 'Failed to delete transaction.');
+        if (error) {
+            throw error;
         }
+
+        showToast('Transaksi berhasil dihapus.', 'success');
+        fetchDashboardData();
     } catch (error) {
         console.error('Delete transaction error:', error);
-        showToast(error.message, 'error');
+        showToast(error.message || 'Gagal menghapus transaksi.', 'error');
     }
 }
 
@@ -356,16 +397,94 @@ async function runDatabaseSetup() {
 
     try {
         showToast('Menginisialisasi basis data, mohon tunggu...', 'warning');
-        const response = await fetch(API_SETUP);
-        const text = await response.text();
-        
-        if (response.ok && text.includes('completed successfully')) {
-            showToast('Basis data berhasil dibuat dan diisi dengan data simulasi!', 'success');
-            bannerDbStatus.classList.add('hidden');
-            fetchDashboardData();
-        } else {
-            throw new Error(text || 'Skrip pengaturan database keluar dengan kegagalan.');
+
+        const today = new Date();
+        const formatOffsetDate = (daysAgo, timeStr) => {
+            const d = new Date();
+            d.setDate(today.getDate() - daysAgo);
+            const [hh, mm, ss] = timeStr.split(':');
+            d.setHours(hh, mm, ss || 0, 0);
+            return d.toISOString();
+        };
+
+        const mockTransactions = [
+            {
+                amount: 15000000.00,
+                type: 'income',
+                category: 'Gaji',
+                date: formatOffsetDate(10, '09:00:00'),
+                description: 'Gaji bulanan dari Acme Corp'
+            },
+            {
+                amount: 3500000.00,
+                type: 'expense',
+                category: 'Tagihan',
+                date: formatOffsetDate(10, '10:30:00'),
+                description: 'Biaya sewa apartemen bulanan'
+            },
+            {
+                amount: 120000.00,
+                type: 'expense',
+                category: 'Makanan & Minuman',
+                date: formatOffsetDate(5, '13:15:00'),
+                description: 'Makan siang di Restoran Sushi'
+            },
+            {
+                amount: 2500000.00,
+                type: 'income',
+                category: 'Pekerjaan Sampingan',
+                date: formatOffsetDate(3, '15:45:00'),
+                description: 'Proyek desain UI sampingan'
+            },
+            {
+                amount: 450000.00,
+                type: 'expense',
+                category: 'Belanja',
+                date: formatOffsetDate(3, '18:20:00'),
+                description: 'Pembelian mouse ergonomis & mousepad'
+            },
+            {
+                amount: 186000.00,
+                type: 'expense',
+                category: 'Hiburan',
+                date: formatOffsetDate(1, '20:00:00'),
+                description: 'Langganan Netflix Premium'
+            },
+            {
+                amount: 350000.00,
+                type: 'expense',
+                category: 'Makanan & Minuman',
+                date: formatOffsetDate(0, '11:30:00'),
+                description: 'Belanja bahan makanan mingguan di supermarket'
+            },
+            {
+                amount: 45000.00,
+                type: 'expense',
+                category: 'Makanan & Minuman',
+                date: formatOffsetDate(0, '08:45:00'),
+                description: 'Kopi susu es vanila di kafe'
+            },
+            {
+                amount: 85000.00,
+                type: 'expense',
+                category: 'Transportasi',
+                date: formatOffsetDate(0, '08:15:00'),
+                description: 'Ongkos perjalanan ojek/taksi online ke co-working space'
+            }
+        ];
+
+        // Insert into Supabase
+        const { error } = await supabase
+            .from('transactions')
+            .insert(mockTransactions);
+
+        if (error) {
+            throw error;
         }
+
+        showToast('Basis data berhasil dibuat dan diisi dengan data simulasi!', 'success');
+        bannerDbStatus.classList.add('hidden');
+        fetchDashboardData();
     } catch (error) {
         console.error('Database setup failed:', error);
         showToast(error.message || 'Skrip inisialisasi basis data gagal.', 'error');
@@ -422,11 +541,10 @@ function formatCurrency(amount) {
     return 'Rp ' + formatted;
 }
 
-// Helper: Format DB YYYY-MM-DD HH:MM:SS Date to readable string
+// Helper: Format DB ISO Date to readable string
 function formatDateString(dateStr) {
     if (!dateStr) return '';
-    const normalizedStr = dateStr.replace(' ', 'T');
-    const date = new Date(normalizedStr);
+    const date = new Date(dateStr);
     
     // Check if valid date
     if (isNaN(date.getTime())) return dateStr;
@@ -449,7 +567,8 @@ function formatDateString(dateStr) {
 // Helper: Toast alerts generator
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
-    if (!container) return;    const toast = document.createElement('div');
+    if (!container) return;
+    const toast = document.createElement('div');
     toast.className = 'toast-enter max-w-sm w-full bg-white/20 border border-white/30 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.3)] rounded-2xl p-4 flex items-start gap-3 pointer-events-auto transition-all duration-300';
     
     let iconColor = 'text-emerald-300 bg-emerald-500/20';
@@ -521,17 +640,36 @@ async function handleClearData() {
 
     try {
         showToast('Mengosongkan data...', 'warning');
-        const response = await fetch(API_CLEAR);
-        const res = await response.json();
+        
+        // Deletes all rows in Supabase safely
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .neq('id', 0);
 
-        if (response.ok && res.success) {
-            showToast(res.message || 'Semua data transaksi berhasil dikosongkan.', 'success');
-            fetchDashboardData();
-        } else {
-            throw new Error(res.message || 'Gagal mengosongkan data.');
+        if (error) {
+            throw error;
         }
+
+        showToast('Semua data transaksi berhasil dikosongkan.', 'success');
+        fetchDashboardData();
     } catch (error) {
         console.error('Clear data error:', error);
-        showToast(error.message, 'error');
+        showToast(error.message || 'Gagal mengosongkan data.', 'error');
     }
+}
+
+// Helper: Check if a date is within the current calendar week starting Monday
+function isSameWeek(txDate, refDate) {
+    const refDay = refDate.getDay();
+    const diffToMonday = refDay === 0 ? -6 : 1 - refDay; // Sunday is 0, Monday is 1, etc.
+    const monday = new Date(refDate);
+    monday.setDate(refDate.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    return txDate >= monday && txDate <= sunday;
 }

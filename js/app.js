@@ -483,64 +483,43 @@ async function runDatabaseSetup() {
 
         const mockTransactions = [
             {
-                amount: 15000000.00,
-                type: 'income',
-                category: 'Gaji',
-                date: formatOffsetDate(10, '09:00:00'),
-                description: 'Gaji bulanan dari Acme Corp'
-            },
-            {
                 amount: 3500000.00,
-                type: 'expense',
                 category: 'Tagihan',
                 date: formatOffsetDate(10, '10:30:00'),
                 description: 'Biaya sewa apartemen bulanan'
             },
             {
                 amount: 120000.00,
-                type: 'expense',
                 category: 'Makanan & Minuman',
                 date: formatOffsetDate(5, '13:15:00'),
                 description: 'Makan siang di Restoran Sushi'
             },
             {
-                amount: 2500000.00,
-                type: 'income',
-                category: 'Pekerjaan Sampingan',
-                date: formatOffsetDate(3, '15:45:00'),
-                description: 'Proyek desain UI sampingan'
-            },
-            {
                 amount: 450000.00,
-                type: 'expense',
                 category: 'Belanja',
                 date: formatOffsetDate(3, '18:20:00'),
                 description: 'Pembelian mouse ergonomis & mousepad'
             },
             {
                 amount: 186000.00,
-                type: 'expense',
                 category: 'Hiburan',
                 date: formatOffsetDate(1, '20:00:00'),
                 description: 'Langganan Netflix Premium'
             },
             {
                 amount: 350000.00,
-                type: 'expense',
                 category: 'Makanan & Minuman',
                 date: formatOffsetDate(0, '11:30:00'),
                 description: 'Belanja bahan makanan mingguan di supermarket'
             },
             {
                 amount: 45000.00,
-                type: 'expense',
                 category: 'Makanan & Minuman',
                 date: formatOffsetDate(0, '08:45:00'),
                 description: 'Kopi susu es vanila di kafe'
             },
             {
                 amount: 85000.00,
-                type: 'expense',
                 category: 'Transportasi',
                 date: formatOffsetDate(0, '08:15:00'),
                 description: 'Ongkos perjalanan ojek/taksi online ke co-working space'

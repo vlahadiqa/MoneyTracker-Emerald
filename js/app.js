@@ -1,4 +1,4 @@
-// Money Tracker Application JS - Supabase JAMstack Version
+// Money Tracker Application JS - Emerald JAMstack Version
 
 // Configuration
 const SUPABASE_URL = 'https://wtkrqokdenvztpoimqao.supabase.co';
@@ -20,6 +20,7 @@ const incomeCategories = [
     "Gaji",
     "Pekerjaan Sampingan",
     "Investasi",
+    "Hadiah / Bonus",
     "Lainnya"
 ];
 
@@ -27,19 +28,25 @@ const incomeCategories = [
 let currentType = 'expense';
 let currentSession = null;
 let isLoginMode = true;
+let allTransactions = [];
+let categoryChart = null;
+let monthlyBudgetLimit = parseFloat(localStorage.getItem('emerald_budget_limit')) || 5000000;
 
 // DOM Elements
 const currentDayEl = document.getElementById('current-day');
 const currentDateEl = document.getElementById('current-date');
 const btnRunSetup = document.getElementById('btn-run-setup');
 const btnClearData = document.getElementById('btn-clear-data');
+const btnExportCSV = document.getElementById('btn-export-csv');
 const spinnerSetup = document.getElementById('spinner-setup');
 const bannerDbStatus = document.getElementById('banner-database-status');
 
-// Card values
+// Card metric values
+const valBalanceTotal = document.getElementById('val-balance-total');
+const valIncomeMonth = document.getElementById('val-income-month');
+const valSpendingMonth = document.getElementById('val-spending-month');
 const valSpendingToday = document.getElementById('val-spending-today');
 const valSpendingWeek = document.getElementById('val-spending-week');
-const valSpendingMonth = document.getElementById('val-spending-month');
 
 // Form elements
 const formTransaction = document.getElementById('form-transaction');
@@ -52,6 +59,21 @@ const btnSubmit = document.getElementById('btn-submit');
 
 const btnTypeExpense = document.getElementById('btn-type-expense');
 const btnTypeIncome = document.getElementById('btn-type-income');
+
+// Filter & Search elements
+const filterSearch = document.getElementById('filter-search');
+const filterType = document.getElementById('filter-type');
+const filterCategory = document.getElementById('filter-category');
+
+// Edit Modal elements
+const modalEdit = document.getElementById('modal-edit');
+const formEditTransaction = document.getElementById('form-edit-transaction');
+const editId = document.getElementById('edit-id');
+const editType = document.getElementById('edit-type');
+const editAmount = document.getElementById('edit-amount');
+const editCategory = document.getElementById('edit-category');
+const editDate = document.getElementById('edit-date');
+const editDescription = document.getElementById('edit-description');
 
 // Errors
 const errAmount = document.getElementById('err-amount');
@@ -81,56 +103,60 @@ const authSubmitBtn = document.getElementById('auth-submit-btn');
 const authToggleText = document.getElementById('auth-toggle-text');
 const authToggleLink = document.getElementById('auth-toggle-link');
 
-// Initialize Dashboard
+// Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Setup today's date displays
+    // 1. Setup date display
     const today = new Date();
-    
-    // Formatting date (e.g., Jumat, 12 Juni)
     const optionsDay = { weekday: 'long', month: 'long', day: 'numeric' };
-    currentDayEl.textContent = today.toLocaleDateString('id-ID', optionsDay);
+    if (currentDayEl) currentDayEl.textContent = today.toLocaleDateString('id-ID', optionsDay);
     
-    // Formatting numerical date (e.g., 12/06/2026)
     const optionsDate = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    currentDateEl.textContent = today.toLocaleDateString('id-ID', optionsDate);
+    if (currentDateEl) currentDateEl.textContent = today.toLocaleDateString('id-ID', optionsDate);
 
-    // 2. Set default form date & time to now (timezone-aware)
+    // 2. Set default form date & time to now
     const now = new Date();
     const offsetMs = now.getTimezoneOffset() * 60 * 1000;
     const localNow = new Date(now.getTime() - offsetMs);
-    inputDate.value = localNow.toISOString().slice(0, 16);
+    if (inputDate) inputDate.value = localNow.toISOString().slice(0, 16);
 
-    // 3. Attach form submit listener
-    formTransaction.addEventListener('submit', handleAddTransaction);
+    // 3. Populate initial categories for Expense
+    setTransactionType('expense');
+    populateFilterCategories();
 
-    // 4. Attach setup triggers
-    btnRunSetup.addEventListener('click', runDatabaseSetup);
-    btnClearData.addEventListener('click', handleClearData);
+    // 4. Attach Listeners
+    if (formTransaction) formTransaction.addEventListener('submit', handleAddTransaction);
+    if (btnRunSetup) btnRunSetup.addEventListener('click', runDatabaseSetup);
+    if (btnClearData) btnClearData.addEventListener('click', handleClearData);
+    if (btnExportCSV) btnExportCSV.addEventListener('click', handleExportCSV);
 
-    // 5. Attach Auth event listeners
+    if (filterSearch) filterSearch.addEventListener('input', applyFilters);
+    if (filterType) filterType.addEventListener('change', applyFilters);
+    if (filterCategory) filterCategory.addEventListener('change', applyFilters);
+
+    if (formEditTransaction) formEditTransaction.addEventListener('submit', handleSaveEdit);
+    if (editType) editType.addEventListener('change', () => {
+        populateCategoriesForSelect(editCategory, editType.value === 'expense' ? expenseCategories : incomeCategories);
+    });
+
     if (formAuth) formAuth.addEventListener('submit', handleAuthSubmit);
     if (authToggleLink) authToggleLink.addEventListener('click', toggleAuthMode);
     if (btnLogout) btnLogout.addEventListener('click', handleLogout);
 
-    // 6. Monitor Supabase Auth state changes
+    // 5. Monitor Supabase Auth state changes
     supabaseClient.auth.onAuthStateChange((event, session) => {
         currentSession = session;
         if (session) {
-            // Hide Auth container and show Dashboard container
             if (authContainer) authContainer.classList.add('hidden');
             if (dashboardContainer) dashboardContainer.classList.remove('hidden');
             if (headerAuthActions) headerAuthActions.classList.remove('hidden');
             
-            // Show logged in user email in the header
             if (userEmailDisplay) {
                 userEmailDisplay.textContent = session.user.email;
                 userEmailDisplay.classList.remove('hidden');
             }
             
-            // Fetch dashboard data for this logged-in user
             fetchDashboardData();
         } else {
-            // Show Auth container and hide Dashboard container
             if (authContainer) authContainer.classList.remove('hidden');
             if (dashboardContainer) dashboardContainer.classList.add('hidden');
             if (headerAuthActions) headerAuthActions.classList.add('hidden');
@@ -140,11 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 userEmailDisplay.classList.add('hidden');
             }
             
-            // Revert to login mode on initial check or sign out
             isLoginMode = true;
             updateAuthModeUI();
 
-            // Clear inputs
             if (authEmail) authEmail.value = '';
             if (authPassword) authPassword.value = '';
             clearValidationErrors();
@@ -152,48 +176,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Switch Transaction Type
+// Switch Transaction Type (Expense vs Income)
 function setTransactionType(type) {
     currentType = type;
-    inputType.value = type;
+    if (inputType) inputType.value = type;
 
-    // Reset error styling
     clearValidationErrors();
 
-    // Update buttons visuals
     if (type === 'expense') {
-        // Active Expense style
-        btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-white/30 bg-white/20 text-white shadow-lg";
-        btnTypeExpense.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
-
-        // Inactive Income style
-        btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5";
-        btnTypeIncome.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-zinc-700";
-
-        // Populate Expense categories
-        populateCategories(expenseCategories);
+        if (btnTypeExpense) {
+            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-red-500/40 bg-red-500/20 text-white shadow-lg";
+            btnTypeExpense.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
+        }
+        if (btnTypeIncome) {
+            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5";
+            btnTypeIncome.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-zinc-700";
+        }
+        populateCategoriesForSelect(inputCategory, expenseCategories);
     } else {
-        // Active Income style
-        btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-white/30 bg-white/20 text-white shadow-lg";
-        btnTypeIncome.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-
-        // Inactive Expense style
-        btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5";
-        btnTypeExpense.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-zinc-700";
-
-        // Populate Income categories
-        populateCategories(incomeCategories);
+        if (btnTypeIncome) {
+            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/20 text-white shadow-lg";
+            btnTypeIncome.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+        }
+        if (btnTypeExpense) {
+            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5";
+            btnTypeExpense.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-zinc-700";
+        }
+        populateCategoriesForSelect(inputCategory, incomeCategories);
     }
 }
 
-// Populate Category options dropdown
-function populateCategories(categories) {
-    inputCategory.innerHTML = '';
-    categories.forEach(category => {
+function populateCategoriesForSelect(selectEl, categories) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    categories.forEach(cat => {
         const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        inputCategory.appendChild(option);
+        option.value = cat;
+        option.textContent = cat;
+        selectEl.appendChild(option);
+    });
+}
+
+function populateFilterCategories() {
+    if (!filterCategory) return;
+    filterCategory.innerHTML = '<option value="all">Semua Kategori</option>';
+    const allCats = Array.from(new Set([...expenseCategories, ...incomeCategories]));
+    allCats.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        filterCategory.appendChild(opt);
     });
 }
 
@@ -207,90 +239,215 @@ async function fetchDashboardData() {
     showLedgerState('loading');
     
     try {
-        // 1. Fetch transactions from Supabase (filtered by current user)
         const { data: transactions, error } = await supabaseClient
             .from('transactions')
             .select('*')
             .eq('user_id', currentSession.user.id)
             .order('date', { ascending: false });
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
-        // 2. Perform client-side stats aggregation (Today, This Week, This Month)
+        allTransactions = transactions || [];
+
+        // Aggregations
         const today = new Date();
         let spendingToday = 0;
         let spendingWeek = 0;
         let spendingMonth = 0;
+        let incomeMonth = 0;
+        let totalExpenseAll = 0;
+        let totalIncomeAll = 0;
 
-        transactions.forEach(tx => {
-            if (tx.type === 'expense') {
-                const txDate = new Date(tx.date);
-                const amount = parseFloat(tx.amount) || 0;
+        const categoryExpensesMonth = {};
 
-                // Check if Today
+        allTransactions.forEach(tx => {
+            const txDate = new Date(tx.date);
+            const amount = parseFloat(tx.amount) || 0;
+            const isExpense = tx.type === 'expense';
+
+            if (isExpense) {
+                totalExpenseAll += amount;
+
                 if (txDate.toDateString() === today.toDateString()) {
                     spendingToday += amount;
                 }
-
-                // Check if This Month
-                if (txDate.getFullYear() === today.getFullYear() && txDate.getMonth() === today.getMonth()) {
-                    spendingMonth += amount;
-                }
-
-                // Check if This Week (Week starting Monday)
                 if (isSameWeek(txDate, today)) {
                     spendingWeek += amount;
+                }
+                if (txDate.getFullYear() === today.getFullYear() && txDate.getMonth() === today.getMonth()) {
+                    spendingMonth += amount;
+                    categoryExpensesMonth[tx.category] = (categoryExpensesMonth[tx.category] || 0) + amount;
+                }
+            } else {
+                totalIncomeAll += amount;
+                if (txDate.getFullYear() === today.getFullYear() && txDate.getMonth() === today.getMonth()) {
+                    incomeMonth += amount;
                 }
             }
         });
 
-        // 3. Update UI
-        updateDashboardUI({
-            spending_today: spendingToday,
-            spending_week: spendingWeek,
-            spending_month: spendingMonth,
-            transactions: transactions
-        });
+        const netBalance = totalIncomeAll - totalExpenseAll;
 
-        bannerDbStatus.classList.add('hidden');
-        btnRunSetup.classList.remove('hidden');
-        btnClearData.classList.remove('hidden');
+        // Update Metric Cards
+        if (valBalanceTotal) valBalanceTotal.textContent = formatCurrency(netBalance);
+        if (valIncomeMonth) valIncomeMonth.textContent = formatCurrency(incomeMonth);
+        if (valSpendingMonth) valSpendingMonth.textContent = formatCurrency(spendingMonth);
+        if (valSpendingToday) valSpendingToday.textContent = formatCurrency(spendingToday);
+        if (valSpendingWeek) valSpendingWeek.textContent = formatCurrency(spendingWeek);
+
+        // Update Budget Widget
+        renderBudgetTracker(spendingMonth);
+
+        // Update Category Donut Chart
+        renderCategoryChart(categoryExpensesMonth);
+
+        // Apply search/filters & render table
+        applyFilters();
+
+        if (bannerDbStatus) bannerDbStatus.classList.add('hidden');
+        if (btnRunSetup) btnRunSetup.classList.remove('hidden');
+        if (btnClearData) btnClearData.classList.remove('hidden');
     } catch (error) {
         console.error('Fetch dashboard failed:', error);
-        showToast(error.message || 'Gagal terhubung ke Supabase. Harap periksa kredensial Anda.', 'error');
+        showToast(error.message || 'Gagal terhubung ke Supabase. Harap periksa database Anda.', 'error');
         
-        // Show banner to guide user to setup
-        bannerDbStatus.classList.remove('hidden');
-        btnRunSetup.classList.remove('hidden');
-        btnClearData.classList.add('hidden');
+        if (bannerDbStatus) bannerDbStatus.classList.remove('hidden');
+        if (btnRunSetup) btnRunSetup.classList.remove('hidden');
+        if (btnClearData) btnClearData.classList.add('hidden');
         showLedgerState('empty');
     }
 }
 
-// Update DOM elements with dashboard data
-function updateDashboardUI(data) {
-    // Format values to currency format
-    valSpendingToday.textContent = formatCurrency(data.spending_today);
-    valSpendingWeek.textContent = formatCurrency(data.spending_week);
-    valSpendingMonth.textContent = formatCurrency(data.spending_month);
+// Budget Tracker Render & Settings
+function renderBudgetTracker(spendingMonth) {
+    const progressText = document.getElementById('budget-progress-text');
+    const progressBar = document.getElementById('budget-progress-bar');
+    if (!progressText || !progressBar) return;
 
-    // Update transactions table
-    const list = data.transactions;
-    lblTotalCount.textContent = `${list.length} transaksi`;
+    const percentage = monthlyBudgetLimit > 0 ? Math.min(Math.round((spendingMonth / monthlyBudgetLimit) * 100), 100) : 0;
+    progressText.textContent = `${formatCurrency(spendingMonth)} / ${formatCurrency(monthlyBudgetLimit)} (${percentage}%)`;
+    progressBar.style.width = `${percentage}%`;
+
+    if (percentage >= 100) {
+        progressBar.className = "h-full bg-red-500 animate-pulse transition-all duration-500 rounded-full";
+    } else if (percentage >= 80) {
+        progressBar.className = "h-full bg-amber-400 transition-all duration-500 rounded-full";
+    } else {
+        progressBar.className = "h-full bg-emerald-400 transition-all duration-500 rounded-full";
+    }
+}
+
+function promptSetBudget() {
+    const input = prompt('Masukkan target batas anggaran bulanan Anda (dalam Rupiah):', monthlyBudgetLimit);
+    if (input !== null) {
+        const val = parseFloat(input.replace(/[^0-9]/g, ''));
+        if (!isNaN(val) && val > 0) {
+            monthlyBudgetLimit = val;
+            localStorage.setItem('emerald_budget_limit', val);
+            showToast('Target anggaran bulanan berhasil diperbarui!', 'success');
+            fetchDashboardData();
+        } else {
+            showToast('Target anggaran harus berupa angka positif.', 'error');
+        }
+    }
+}
+
+// Chart.js Category Breakdown Rendering
+function renderCategoryChart(categoryData) {
+    const canvas = document.getElementById('chart-category');
+    const emptyMsg = document.getElementById('chart-empty-msg');
+    if (!canvas) return;
+
+    const labels = Object.keys(categoryData);
+    const dataValues = Object.values(categoryData);
+
+    if (labels.length === 0) {
+        if (emptyMsg) emptyMsg.classList.remove('hidden');
+        if (categoryChart) categoryChart.destroy();
+        return;
+    } else {
+        if (emptyMsg) emptyMsg.classList.add('hidden');
+    }
+
+    const colors = [
+        '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1'
+    ];
+
+    if (categoryChart) {
+        categoryChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: dataValues,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                borderWidth: 2,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#E5E7EB',
+                        font: { family: 'Outfit', size: 12 },
+                        padding: 14,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.parsed || 0;
+                            return ` ${context.label}: ${formatCurrency(val)}`;
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+}
+
+// Apply Filters (Search, Type, Category)
+function applyFilters() {
+    const searchTerm = (filterSearch ? filterSearch.value : '').toLowerCase().trim();
+    const typeVal = filterType ? filterType.value : 'all';
+    const catVal = filterCategory ? filterCategory.value : 'all';
+
+    const filtered = allTransactions.filter(tx => {
+        // Search match
+        const descMatch = (tx.description || '').toLowerCase().includes(searchTerm);
+        const catMatchSearch = (tx.category || '').toLowerCase().includes(searchTerm);
+        const amountMatch = (tx.amount || '').toString().includes(searchTerm);
+        const matchesSearch = !searchTerm || descMatch || catMatchSearch || amountMatch;
+
+        // Type match
+        const matchesType = typeVal === 'all' || tx.type === typeVal;
+
+        // Category match
+        const matchesCat = catVal === 'all' || tx.category === catVal;
+
+        return matchesSearch && matchesType && matchesCat;
+    });
+
+    renderTransactionsTable(filtered);
+}
+
+// Render Transactions Table UI
+function renderTransactionsTable(list) {
+    if (lblTotalCount) lblTotalCount.textContent = `${list.length} transaksi`;
 
     if (list.length === 0) {
-        showLedgerState('table');
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center py-12 text-white/50 text-sm">Belum ada transaksi. Catat pengeluaran pertamamu hari ini!</td>
-            </tr>
-        `;
-        // Show warning helper banner if database has no records at all
-        if (data.spending_today === 0 && data.spending_week === 0 && data.spending_month === 0) {
-            bannerDbStatus.classList.remove('hidden');
-        }
+        showLedgerState('empty');
     } else {
         showLedgerState('table');
         tableBody.innerHTML = '';
@@ -298,13 +455,10 @@ function updateDashboardUI(data) {
             const row = document.createElement('tr');
             row.className = "hover:bg-white/5 transition-colors group";
             
-            // Format category badge type color styling
             const isIncome = tx.type === 'income';
             const badgeBg = isIncome ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' : 'bg-red-500/20 text-red-300 border border-red-500/20';
             const sign = isIncome ? '+' : '-';
             const textClass = isIncome ? 'text-emerald-300 font-semibold' : 'text-zinc-200 font-medium';
-            
-            // Formatted Date output
             const formattedDate = formatDateString(tx.date);
 
             row.innerHTML = `
@@ -314,18 +468,25 @@ function updateDashboardUI(data) {
                     </span>
                 </td>
                 <td class="py-3.5 pr-2 text-xs text-gray-300 font-semibold">${formattedDate}</td>
-                <td class="py-3.5 pr-2 text-xs text-gray-300 max-w-[200px] truncate hidden md:table-cell" title="${escapeHtml(tx.description || '')}">
+                <td class="py-3.5 pr-2 text-xs text-gray-300 max-w-[180px] truncate hidden md:table-cell" title="${escapeHtml(tx.description || '')}">
                     ${escapeHtml(tx.description || '—')}
                 </td>
                 <td class="py-3.5 pr-2 text-right ${textClass}">
                     ${sign} ${formatCurrency(tx.amount)}
                 </td>
-                <td class="py-3.5 text-right w-[40px]">
-                    <button onclick="handleDeleteTransaction(${tx.id})" class="p-1 text-gray-400 hover:text-red-400 rounded transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-white/10" title="Hapus Transaksi">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
+                <td class="py-3.5 text-center w-[70px]">
+                    <div class="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
+                        <button onclick="openEditModal(${tx.id})" class="p-1 text-gray-400 hover:text-emerald-300 rounded transition-colors" title="Edit Transaksi">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
+                        <button onclick="handleDeleteTransaction(${tx.id})" class="p-1 text-gray-400 hover:text-red-400 rounded transition-colors" title="Hapus Transaksi">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -333,20 +494,19 @@ function updateDashboardUI(data) {
     }
 }
 
-// Toggle loading/empty/table state views
 function showLedgerState(state) {
     if (state === 'loading') {
-        tableLoader.classList.remove('hidden');
-        tableEmpty.classList.add('hidden');
-        tableWrapper.classList.add('hidden');
+        if (tableLoader) tableLoader.classList.remove('hidden');
+        if (tableEmpty) tableEmpty.classList.add('hidden');
+        if (tableWrapper) tableWrapper.classList.add('hidden');
     } else if (state === 'empty') {
-        tableLoader.classList.add('hidden');
-        tableEmpty.classList.remove('hidden');
-        tableWrapper.classList.add('hidden');
+        if (tableLoader) tableLoader.classList.add('hidden');
+        if (tableEmpty) tableEmpty.classList.remove('hidden');
+        if (tableWrapper) tableWrapper.classList.add('hidden');
     } else {
-        tableLoader.classList.add('hidden');
-        tableEmpty.classList.add('hidden');
-        tableWrapper.classList.remove('hidden');
+        if (tableLoader) tableLoader.classList.add('hidden');
+        if (tableEmpty) tableEmpty.classList.add('hidden');
+        if (tableWrapper) tableWrapper.classList.remove('hidden');
     }
 }
 
@@ -355,11 +515,10 @@ async function handleAddTransaction(e) {
     e.preventDefault();
     clearValidationErrors();
 
-    // Set saving loading state
     const originalBtnContent = btnSubmit.innerHTML;
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
@@ -372,7 +531,6 @@ async function handleAddTransaction(e) {
     const dateVal = inputDate.value;
     const description = inputDescription.value.trim();
 
-    // Client-side validation fallback
     const errors = {};
     if (isNaN(amount) || amount <= 0) {
         errors.amount = 'Nominal harus berupa angka positif.';
@@ -391,7 +549,6 @@ async function handleAddTransaction(e) {
         return;
     }
 
-    // Format datetime-local format to ISO standard for Supabase
     const formattedDate = new Date(dateVal).toISOString();
 
     const txData = {
@@ -411,17 +568,13 @@ async function handleAddTransaction(e) {
             .from('transactions')
             .insert([txData]);
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         showToast('Transaksi berhasil ditambahkan!', 'success');
         
-        // Clear inputs (keeping type and date intact)
         inputAmount.value = '';
         inputDescription.value = '';
         
-        // Reload dashboard data
         fetchDashboardData();
     } catch (error) {
         console.error('Add transaction failed:', error);
@@ -429,6 +582,83 @@ async function handleAddTransaction(e) {
     } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = originalBtnContent;
+    }
+}
+
+// Edit Modal Functions
+function openEditModal(id) {
+    const tx = allTransactions.find(t => t.id === id);
+    if (!tx) return;
+
+    if (editId) editId.value = tx.id;
+    if (editType) editType.value = tx.type;
+    if (editAmount) editAmount.value = tx.amount;
+    
+    // Populate categories based on type
+    const categories = tx.type === 'expense' ? expenseCategories : incomeCategories;
+    populateCategoriesForSelect(editCategory, categories);
+    if (editCategory) editCategory.value = tx.category;
+
+    if (editDate) {
+        const dateObj = new Date(tx.date);
+        const offsetMs = dateObj.getTimezoneOffset() * 60 * 1000;
+        const localDate = new Date(dateObj.getTime() - offsetMs);
+        editDate.value = localDate.toISOString().slice(0, 16);
+    }
+
+    if (editDescription) editDescription.value = tx.description || '';
+
+    if (modalEdit) modalEdit.classList.remove('hidden');
+}
+
+function closeEditModal() {
+    if (modalEdit) modalEdit.classList.add('hidden');
+}
+
+async function handleSaveEdit(e) {
+    e.preventDefault();
+    if (!editId) return;
+
+    const id = editId.value;
+    const amount = parseFloat(editAmount.value);
+    const type = editType.value;
+    const category = editCategory.value;
+    const dateVal = editDate.value;
+    const description = editDescription.value.trim();
+
+    if (isNaN(amount) || amount <= 0 || !category || !dateVal) {
+        showToast('Harap lengkapi semua kolom wajib dengan benar.', 'error');
+        return;
+    }
+
+    const btnSave = document.getElementById('btn-save-edit');
+    if (btnSave) btnSave.disabled = true;
+
+    try {
+        const formattedDate = new Date(dateVal).toISOString();
+
+        const { error } = await supabaseClient
+            .from('transactions')
+            .update({
+                amount,
+                type,
+                category,
+                date: formattedDate,
+                description: description || null
+            })
+            .eq('id', id)
+            .eq('user_id', currentSession.user.id);
+
+        if (error) throw error;
+
+        showToast('Perubahan berhasil disimpan!', 'success');
+        closeEditModal();
+        fetchDashboardData();
+    } catch (error) {
+        console.error('Update transaction error:', error);
+        showToast(error.message || 'Gagal menyukai transaksi.', 'error');
+    } finally {
+        if (btnSave) btnSave.disabled = false;
     }
 }
 
@@ -449,10 +679,7 @@ async function handleDeleteTransaction(id) {
         }
 
         const { error } = await query;
-
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         showToast('Transaksi berhasil dihapus.', 'success');
         fetchDashboardData();
@@ -462,13 +689,43 @@ async function handleDeleteTransaction(id) {
     }
 }
 
-// Automated Setup and Database Seeding
+// Export CSV Feature
+function handleExportCSV() {
+    if (allTransactions.length === 0) {
+        showToast('Tidak ada data transaksi untuk diekspor.', 'warning');
+        return;
+    }
+
+    let csvContent = "\uFEFFTanggal,Tipe,Kategori,Nominal (IDR),Deskripsi\n";
+
+    allTransactions.forEach(tx => {
+        const dateStr = formatDateString(tx.date).replace(/,/g, '');
+        const typeStr = tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+        const categoryStr = `"${(tx.category || '').replace(/"/g, '""')}"`;
+        const amountStr = tx.amount;
+        const descStr = `"${(tx.description || '').replace(/"/g, '""')}"`;
+
+        csvContent += `${dateStr},${typeStr},${categoryStr},${amountStr},${descStr}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Emerald_Transaksi_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('File CSV berhasil diunduh!', 'success');
+}
+
+// Automated Setup and Seeding with Dual Types (Expense + Income)
 async function runDatabaseSetup() {
-    spinnerSetup.classList.remove('hidden');
-    btnRunSetup.disabled = true;
+    if (spinnerSetup) spinnerSetup.classList.remove('hidden');
+    if (btnRunSetup) btnRunSetup.disabled = true;
 
     try {
-        showToast('Menginisialisasi basis data, mohon tunggu...', 'warning');
+        showToast('Menginisialisasi data contoh, mohon tunggu...', 'warning');
 
         const today = new Date();
         const formatOffsetDate = (daysAgo, timeStr) => {
@@ -481,56 +738,60 @@ async function runDatabaseSetup() {
 
         const mockTransactions = [
             {
+                amount: 8500000.00,
+                type: 'income',
+                category: 'Gaji',
+                date: formatOffsetDate(12, '09:00:00'),
+                description: 'Gaji Bulanan Pekerjaan Utama'
+            },
+            {
+                amount: 1200000.00,
+                type: 'income',
+                category: 'Pekerjaan Sampingan',
+                date: formatOffsetDate(8, '14:30:00'),
+                description: 'Proyek Desain Web Freelance'
+            },
+            {
                 amount: 3500000.00,
+                type: 'expense',
                 category: 'Tagihan',
                 date: formatOffsetDate(10, '10:30:00'),
                 description: 'Biaya sewa apartemen bulanan'
             },
             {
                 amount: 120000.00,
+                type: 'expense',
                 category: 'Makanan & Minuman',
                 date: formatOffsetDate(5, '13:15:00'),
                 description: 'Makan siang di Restoran Sushi'
             },
             {
                 amount: 450000.00,
+                type: 'expense',
                 category: 'Belanja',
                 date: formatOffsetDate(3, '18:20:00'),
                 description: 'Pembelian mouse ergonomis & mousepad'
             },
             {
                 amount: 186000.00,
+                type: 'expense',
                 category: 'Hiburan',
                 date: formatOffsetDate(1, '20:00:00'),
                 description: 'Langganan Netflix Premium'
             },
             {
                 amount: 350000.00,
+                type: 'expense',
                 category: 'Makanan & Minuman',
                 date: formatOffsetDate(0, '11:30:00'),
                 description: 'Belanja bahan makanan mingguan di supermarket'
-            },
-            {
-                amount: 45000.00,
-                category: 'Makanan & Minuman',
-                date: formatOffsetDate(0, '08:45:00'),
-                description: 'Kopi susu es vanila di kafe'
-            },
-            {
-                amount: 85000.00,
-                category: 'Transportasi',
-                date: formatOffsetDate(0, '08:15:00'),
-                description: 'Ongkos perjalanan ojek/taksi online ke co-working space'
             }
         ];
 
-        // Insert into Supabase (assign current user id to mock transactions)
         const userId = currentSession && currentSession.user ? currentSession.user.id : null;
         const mockTransactionsWithUser = mockTransactions.map(tx => {
             const newTx = { ...tx };
-            if (userId) {
-                newTx.user_id = userId;
-            }
+            if (userId) newTx.user_id = userId;
             return newTx;
         });
 
@@ -538,86 +799,73 @@ async function runDatabaseSetup() {
             .from('transactions')
             .insert(mockTransactionsWithUser);
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
-        showToast('Basis data berhasil dibuat dan diisi dengan data simulasi!', 'success');
-        bannerDbStatus.classList.add('hidden');
+        showToast('Basis data berhasil diisi dengan data simulasi!', 'success');
+        if (bannerDbStatus) bannerDbStatus.classList.add('hidden');
         fetchDashboardData();
     } catch (error) {
         console.error('Database setup failed:', error);
         showToast(error.message || 'Skrip inisialisasi basis data gagal.', 'error');
     } finally {
-        spinnerSetup.classList.add('hidden');
-        btnRunSetup.disabled = false;
+        if (spinnerSetup) spinnerSetup.classList.add('hidden');
+        if (btnRunSetup) btnRunSetup.disabled = false;
     }
 }
 
-// Helper: Show input fields validation errors
+// Helpers & Validation
 function displayValidationErrors(errors) {
-    if (errors.amount) {
+    if (errors.amount && errAmount) {
         errAmount.textContent = errors.amount;
         errAmount.classList.remove('hidden');
-        inputAmount.classList.add('border-red-400/50', 'focus:border-red-400/50', 'focus:ring-red-400/50');
+        inputAmount.classList.add('border-red-400/50');
     }
-    if (errors.category) {
+    if (errors.category && errCategory) {
         errCategory.textContent = errors.category;
         errCategory.classList.remove('hidden');
-        inputCategory.classList.add('border-red-400/50', 'focus:border-red-400/50', 'focus:ring-red-400/50');
+        inputCategory.classList.add('border-red-400/50');
     }
-    if (errors.date) {
+    if (errors.date && errDate) {
         errDate.textContent = errors.date;
         errDate.classList.remove('hidden');
-        inputDate.classList.add('border-red-400/50', 'focus:border-red-400/50', 'focus:ring-red-400/50');
-    }
-    if (errors.description) {
-        errDescription.textContent = errors.description;
-        errDescription.classList.remove('hidden');
-        inputDescription.classList.add('border-red-400/50', 'focus:border-red-400/50', 'focus:ring-red-400/50');
+        inputDate.classList.add('border-red-400/50');
     }
 }
 
-// Helper: Clear validation errors state
 function clearValidationErrors() {
     const errorContainers = [errAmount, errCategory, errDate, errDescription];
     errorContainers.forEach(container => {
-        container.textContent = '';
-        container.classList.add('hidden');
+        if (container) {
+            container.textContent = '';
+            container.classList.add('hidden');
+        }
     });
 
     const inputs = [inputAmount, inputCategory, inputDate, inputDescription];
     inputs.forEach(input => {
-        input.classList.remove('border-red-400/50', 'focus:border-red-400/50', 'focus:ring-red-400/50');
+        if (input) input.classList.remove('border-red-400/50');
     });
 }
 
-// Helper: Format Currency as IDR (Rp)
 function formatCurrency(amount) {
     const formatted = new Intl.NumberFormat('id-ID', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-    }).format(amount);
-    return 'Rp ' + formatted;
+    }).format(Math.abs(amount));
+    
+    return (amount < 0 ? '- Rp ' : 'Rp ') + formatted;
 }
 
-// Helper: Format DB ISO Date to readable string
 function formatDateString(dateStr) {
     if (!dateStr) return '';
-    
-    // Normalize date strings that lack timezone offset/indicator from PostgreSQL TIMESTAMP column
     let normalized = dateStr;
     if (typeof normalized === 'string' && !normalized.endsWith('Z') && !normalized.includes('+', 10) && !normalized.includes('-', 10)) {
-        // PostgREST space separator in timezone-less TIMESTAMP representation check
         normalized = normalized.replace(' ', 'T') + 'Z';
     }
-    
     const dateObj = new Date(normalized);
-    
-    // Check if valid date
     if (isNaN(dateObj.getTime())) return dateStr;
     
-    const formattedDate = dateObj.toLocaleDateString('id-ID', {
+    return dateObj.toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -625,11 +873,8 @@ function formatDateString(dateStr) {
         minute: '2-digit',
         hour12: false
     }).replace(':', '.');
-
-    return formattedDate;
 }
 
-// Helper: Toast alerts generator
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -675,7 +920,6 @@ function showToast(message, type = 'success') {
 
     container.appendChild(toast);
 
-    // Auto-remove after 4.5 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-10px)';
@@ -683,7 +927,6 @@ function showToast(message, type = 'success') {
     }, 4500);
 }
 
-// Helper: Escape HTML string to prevent XSS
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, 
@@ -697,7 +940,6 @@ function escapeHtml(str) {
     );
 }
 
-// Clear all transaction data
 async function handleClearData() {
     if (!confirm('Apakah Anda yakin ingin mengosongkan semua data transaksi? Tindakan ini tidak dapat dibatalkan.')) {
         return;
@@ -705,11 +947,7 @@ async function handleClearData() {
 
     try {
         showToast('Mengosongkan data...', 'warning');
-        
-        // Deletes only the logged-in user's transactions safely
-        const query = supabaseClient
-            .from('transactions')
-            .delete();
+        const query = supabaseClient.from('transactions').delete();
 
         if (currentSession && currentSession.user) {
             query.eq('user_id', currentSession.user.id);
@@ -718,10 +956,7 @@ async function handleClearData() {
         }
 
         const { error } = await query;
-
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         showToast('Semua data transaksi berhasil dikosongkan.', 'success');
         fetchDashboardData();
@@ -731,10 +966,9 @@ async function handleClearData() {
     }
 }
 
-// Helper: Check if a date is within the current calendar week starting Monday
 function isSameWeek(txDate, refDate) {
     const refDay = refDate.getDay();
-    const diffToMonday = refDay === 0 ? -6 : 1 - refDay; // Sunday is 0, Monday is 1, etc.
+    const diffToMonday = refDay === 0 ? -6 : 1 - refDay;
     const monday = new Date(refDate);
     monday.setDate(refDate.getDate() + diffToMonday);
     monday.setHours(0, 0, 0, 0);
@@ -746,10 +980,7 @@ function isSameWeek(txDate, refDate) {
     return txDate >= monday && txDate <= sunday;
 }
 
-// ==========================================
 // Authentication Handlers
-// ==========================================
-
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     updateAuthModeUI();
@@ -799,21 +1030,11 @@ async function handleAuthSubmit(e) {
     
     try {
         if (isLoginMode) {
-            // Login Mode
-            const { error } = await supabaseClient.auth.signInWithPassword({
-                email,
-                password
-            });
-            
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) throw error;
             showToast('Berhasil masuk!', 'success');
         } else {
-            // Register Mode
-            const { data, error } = await supabaseClient.auth.signUp({
-                email,
-                password
-            });
-            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
             if (error) throw error;
             
             if (data.user && data.session === null) {

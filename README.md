@@ -1,11 +1,11 @@
-# 💸 Emerald - Personal Expense Tracker
+# 💸 Emerald - Personal Financial Tracker
 
 > 🔗 **Live Demo:** [money-tracker-emerald.vercel.app](https://money-tracker-emerald.vercel.app)
 
 ## 🌙 Tentang Proyek
-Emerald adalah aplikasi web minimalis berdesain modern yang dirancang khusus untuk mencatat dan melacak pengeluaran keuangan harian secara instan, guna menghilangkan kebingungan finansial pribadi. 
+Emerald adalah aplikasi web manajemen keuangan pribadi yang intuitif, cepat, dan berdesain modern. Aplikasi ini dirancang untuk melacak pengeluaran dan pemasukan harian, memantau batas anggaran bulanan, serta menyajikan visualisasi grafik keuangan secara instan dengan beban kognitif yang minim.
 
-Proyek ini lahir dari kebutuhan nyata (*dogfooding*): banyak aplikasi pencatat keuangan di luar sana yang menawarkan fitur terlalu rumit (akuntansi ganda, investasi, grafik kompleks). Emerald mengusung filosofi *Essentialism*—menyelesaikan satu masalah spesifik dengan pendekatan yang berpusat pada kenyamanan pengguna dan beban kognitif yang minim.
+Emerald mengusung filosofi *Essentialism*—menyelesaikan masalah pengelolaan finansial pribadi dengan antarmuka tembus pandang (*Glassmorphism*) yang premium dan fokus 100% pada kenyamanan pengguna.
 
 ---
 
@@ -13,30 +13,23 @@ Proyek ini lahir dari kebutuhan nyata (*dogfooding*): banyak aplikasi pencatat k
 
 | Fitur | Deskripsi |
 | :--- | :--- |
-| ⚡ **Pencatatan Real-time** | Data pengeluaran tersimpan dan tersinkronisasi instan via Supabase. |
-| 📊 **Kalkulasi Otomatis** | Ringkasan dinamis untuk pengeluaran Hari Ini, Minggu Ini, dan Bulan Ini. |
-| 🕰️ **Input Waktu Riil** | Mendukung pencatatan presisi hingga satuan jam dan menit. |
-| 🔄 **Dual-State Management** | Dilengkapi tombol *Isi Data Simulasi* untuk demo dan *Kosongkan Data* untuk penggunaan riil (*Empty State*). |
-| 📱 **Responsive UI** | Tata letak *Mobile-First* yang optimal diakses via *browser* HP saat bepergian. |
-| 🎨 **Glassmorphism UI** | Antarmuka tembus pandang bergaya iOS yang memberikan kesan premium dan menenangkan. |
-
----
-
-## 🎯 Problem & Solution
-
-**Problem**
-Aplikasi finansial konvensional sering terasa membebani karena fitur yang membengkak (*feature bloat*). Pengguna hanya ingin menjawab satu pertanyaan sederhana setiap harinya: *"Ke mana perginya uang saya hari ini?"* namun dihadapkan pada kurva pembelajaran yang rumit.
-
-**Solution**
-Emerald menghadirkan antarmuka esensial tanpa fitur pemasukan atau utang yang rumit. Dengan fokus 100% pada pelacakan pengeluaran harian, dipadukan dengan desain *Glassmorphism* dan optimasi penggunaan di ponsel, pengguna dapat mencatat transaksi kurang dari 5 detik setelah berbelanja.
+| ⚡ **Pencatatan Real-time** | Sinkronisasi instan data pengeluaran dan pemasukan via Supabase Database. |
+| 💰 **Dual Transaction Type** | Mendukung pencatatan **Pengeluaran** dan **Pemasukan** dengan kalkulasi **Total Saldo Bersih**. |
+| 📊 **Visual Analytics (Chart.js)** | Diagram Donat interaktif untuk melihat proporsi pengeluaran berdasarkan kategori bulan ini. |
+| 🎯 **Budget Tracker Widget** | Pengaturan target batas anggaran bulanan dilengkapi *progress bar* dan peringatan visual saat mendekati batas. |
+| ✏️ **Edit & Hapus Transaksi** | Modal dialog interaktif untuk mengubah nominal, kategori, tanggal, atau deskripsi transaksi. |
+| 🔍 **Filter & Pencarian Live** | Pencarian teks cepat dan filter berdasarkan Tipe (Pemasukan/Pengeluaran) serta Kategori. |
+| 📥 **Ekspor Laporan CSV** | Mengunduh riwayat transaksi ke dalam format `.csv` (UTF-8 BOM) yang kompatibel dengan Excel. |
+| 🔄 **Dual-State & Mock Seeding** | Tombol *Isi Data Simulasi* untuk pengujian instan dan *Kosongkan Data* untuk reset aman. |
+| 🎨 **Glassmorphism UI** | Antarmuka tembus pandang bergaya iOS yang memberikan kesan premium, bersih, dan modern. |
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** HTML5, JavaScript (Vanilla ES6)
-- **Styling:** Tailwind CSS (Utility-first)
-- **Backend / Database:** Supabase (PostgreSQL, JS Client)
+- **Frontend:** HTML5, JavaScript (Vanilla ES6), Chart.js
+- **Styling:** Tailwind CSS (Utility-first with Glassmorphism)
+- **Backend / Database:** Supabase (PostgreSQL, JS Client, Auth & RLS)
 - **Deployment:** Vercel
 
 ---
@@ -45,8 +38,9 @@ Emerald menghadirkan antarmuka esensial tanpa fitur pemasukan atau utang yang ru
 
 ```text
 📦 emerald-tracker
- ┣ 📜 index.html      # Struktur utama dan antarmuka Glassmorphism
- ┣ 📜 app.js          # Logika kalkulasi, state management, dan koneksi Supabase
+ ┣ 📜 index.html      # Antarmuka Glassmorphism, Form, Table, & Modal Dialog
+ ┣ 📂 js
+ ┃ ┗ 📜 app.js        # Logika aplikasi, Chart.js, Filter, Export CSV, & Supabase SDK
  ┗ 📜 README.md       # Dokumentasi proyek
 ```
 
@@ -55,28 +49,25 @@ Emerald menghadirkan antarmuka esensial tanpa fitur pemasukan atau utang yang ru
 ## 🚀 Cara Menjalankan Secara Lokal
 
 **Prerequisites**
-- *Browser* modern (Chrome/Safari/Firefox)
+- *Browser* modern (Chrome/Safari/Firefox/Edge)
 - Akun [Supabase](https://supabase.com/)
 
 **Instalasi**
 
 ```bash
 # Clone repository
-git clone [https://github.com/vlahadiqa/emerald-tracker.git](https://github.com/vlahadiqa/emerald-tracker.git)
+git clone https://github.com/vlahadiqa/emerald-tracker.git
 cd emerald-tracker
 ```
-
-**Konfigurasi Keamanan (Environment Variables)**
-Demi keamanan, jangan pernah mengunggah file yang berisi Supabase URL and Anon Key asli Anda ke public repository. Simpan kredensial Anda dengan aman di pengaturan Environment Variables pada platform hosting Anda (seperti Vercel).
 
 ---
 
 ## 🗄️ Database & Security Setup
 
-Jalankan *script* SQL berikut di **Supabase SQL Editor** Anda untuk membuat tabel transaksi beserta sistem keamanannya:
+Jalankan *script* SQL berikut di **Supabase SQL Editor** Anda untuk membuat tabel transaksi beserta sistem keamanannya (Row Level Security):
 
 ```sql
--- 1. Buat Tabel
+-- 1. Buat Tabel Transaksi
 CREATE TABLE transactions (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   amount NUMERIC NOT NULL,
@@ -87,15 +78,18 @@ CREATE TABLE transactions (
   user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid() NOT NULL
 );
 
--- 2. Aktifkan Row Level Security (MANDATORY UNTUK KEAMANAN)
+-- 2. Aktifkan Row Level Security (MANDATORY)
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
--- 3. Buat Aturan Keamanan (RLS Policies)
+-- 3. Aturan Keamanan (RLS Policies)
 CREATE POLICY "View own transactions" ON transactions
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Insert own transactions" ON transactions
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Update own transactions" ON transactions
+  FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Delete own transactions" ON transactions
   FOR DELETE USING (auth.uid() = user_id);
@@ -103,20 +97,9 @@ CREATE POLICY "Delete own transactions" ON transactions
 
 ---
 
-## 📝 Penggunaan (Usage)
-
-1. Buka aplikasi melalui *browser* HP atau desktop.
-2. Pada panel **Tambah Transaksi**, masukkan nominal uang.
-3. Pilih kategori pengeluaran (misal: Makanan & Minuman, Transportasi).
-4. Sesuaikan tanggal dan waktu secara spesifik.
-5. Berikan deskripsi singkat (opsional), lalu klik **Simpan Transaksi**.
-6. Angka di kartu ringkasan (Atas) akan terbarui secara *real-time*.
-
----
-
 ## 🎨 Design Philosophy
 
-Tema *Glassmorphism* dengan palet warna hijau tua (Emerald) dirancang khusus untuk psikologi pengguna:
+Tema *Glassmorphism* dengan palet warna hijau zamrud (Emerald) dan aksen terracotta dirancang khusus untuk psikologi pengguna:
 - **Warna Emerald (Zamrud):** Melambangkan stabilitas finansial, kejernihan (*clarity*), dan pertumbuhan.
 - **Glassmorphism:** Memberikan hierarki visual yang jelas tanpa memblokir ruang, membuat aplikasi terasa ringan (*lightweight*) dan modern.
-- **Micro-interactions:** Penggunaan *scrollbar* tipis ala iOS dan *padding* tabel yang longgar ditujukan untuk mereduksi kebingungan visual pengguna saat membaca riwayat data.
+- **Micro-interactions:** Penggunaan *scrollbar* tipis ala iOS, *hover transitions*, dan *badge system* ditujukan untuk mereduksi kebingungan visual pengguna.

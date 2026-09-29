@@ -9,7 +9,7 @@
     <!-- Google Fonts: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -20,12 +20,12 @@
                         sans: ['Outfit', 'sans-serif'],
                     },
                     colors: {
-                        terracotta: {
-                            50: '#fef2f2',
-                            100: '#fee2e2',
-                            500: '#ef4444',
-                            600: '#dc2626',
-                            700: '#b91c1c',
+                        emerald: {
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            900: '#064e3b',
+                            950: '#022c22',
                         }
                     }
                 }
@@ -35,131 +35,161 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Smooth fade-in and scale-in animations */
+        /* Modern Glassmorphism & Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(12px) scale(0.99); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .toast-enter {
-            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* iOS Thin Glass Scrollbar styling */
+        /* High-end iOS Thin Glass Scrollbar */
         .scrollbar-ios::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
+            width: 6px;
+            height: 6px;
         }
         .scrollbar-ios::-webkit-scrollbar-track {
             background: transparent;
         }
         .scrollbar-ios::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.18) !important;
+            background: rgba(16, 185, 129, 0.25) !important;
             border-radius: 10px !important;
         }
         .scrollbar-ios::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3) !important;
-        }
-        .scrollbar-ios::-webkit-scrollbar-button {
-            display: none !important;
+            background: rgba(16, 185, 129, 0.45) !important;
         }
 
-        /* Table spacing and cell overrides for breathable rows */
+        /* Table spacing and overrides */
         #table-body td {
-            padding-top: 0.85rem !important;
-            padding-bottom: 0.85rem !important;
-            padding-right: 1rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+            padding-right: 1.25rem !important;
             vertical-align: middle;
         }
         #table-wrapper th {
-            padding-right: 1rem !important;
+            padding-right: 1.25rem !important;
+        }
+
+        /* Glass Glow Box Shadow Utility */
+        .glass-card {
+            background: rgba(18, 32, 28, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(16, 185, 129, 0.18);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.05);
+        }
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-2px);
+            border-color: rgba(16, 185, 129, 0.35);
+            box-shadow: 0 15px 45px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(16, 185, 129, 0.12);
+        }
+
+        /* Select arrow custom color override */
+        select option {
+            background-color: #12201c;
+            color: #ffffff;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-[#4A4A4A] via-[#2D2D2D] to-[#1F1F1F] min-h-screen text-white antialiased selection:bg-white/30 flex flex-col relative overflow-x-hidden">
+<body class="bg-[#09110f] text-emerald-50 min-h-screen font-sans antialiased selection:bg-emerald-500/30 flex flex-col relative overflow-x-hidden">
 
-    <!-- Abstract futuristic circular elements and glows in background -->
-    <div class="absolute top-[5%] left-[-5%] w-[600px] h-[600px] rounded-full border border-white/5 pointer-events-none"></div>
-    <div class="absolute top-[2%] left-[-2%] w-[800px] h-[800px] rounded-full border border-white/5 pointer-events-none"></div>
-    <div class="absolute bottom-[10%] right-[-10%] w-[700px] h-[700px] rounded-full border border-white/5 pointer-events-none"></div>
+    <!-- Ambient Glowing Orbs Background -->
+    <div class="fixed top-[-10%] left-[-10%] w-[700px] h-[700px] rounded-full bg-emerald-600/15 blur-[140px] pointer-events-none"></div>
+    <div class="fixed top-[20%] right-[-10%] w-[650px] h-[650px] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] left-[20%] w-[750px] h-[750px] rounded-full bg-emerald-900/20 blur-[150px] pointer-events-none"></div>
     
-    <!-- Dot matrix grid overlay for hi-tech abstract effect -->
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
+    <!-- Fine Dot Matrix Grid Overlay -->
+    <div class="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-md w-full pointer-events-none"></div>
 
     <!-- Header Section -->
-    <header class="bg-white/5 backdrop-blur-md border-b border-white/10 sticky top-0 z-40">
+    <header class="glass-card sticky top-0 z-40 border-b border-emerald-500/15 bg-[#09110f]/80 backdrop-blur-xl">
         <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px] shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                    <div class="w-full h-full bg-[#0d1815] rounded-[15px] flex items-center justify-center text-emerald-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white">Emerald</h1>
-                    <p class="text-xs text-gray-300 font-medium">Pencatat Keuangan Pribadi</p>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Emerald
+                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PRO</span>
+                    </h1>
+                    <p class="text-xs text-emerald-200/60 font-medium">Pencatat Keuangan Pribadi</p>
                 </div>
             </div>
             <div class="flex items-center gap-4">
                 <div id="header-auth-actions" class="hidden flex items-center gap-3">
-                    <span id="user-email-display" class="text-xs text-emerald-300 font-semibold hidden md:inline-block"></span>
-                    <button id="btn-export-csv" class="text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/30 transition-all flex items-center gap-1.5" title="Ekspor transaksi ke file CSV">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <span id="user-email-display" class="text-xs text-emerald-300 font-semibold bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-500/20 hidden md:inline-block"></span>
+                    <button id="btn-export-csv" class="text-xs bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 font-semibold px-3.5 py-2 rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1.5 shadow-sm hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]" title="Ekspor transaksi ke file CSV">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        <span>Ekspor CSV</span>
+                        <span class="hidden sm:inline">Ekspor CSV</span>
                     </button>
-                    <button id="btn-clear-data" class="hidden text-red-400/70 hover:text-red-400 transition-colors text-xs font-medium">
-                        Kosongkan Data
+                    <button id="btn-clear-data" class="hidden text-red-400/80 hover:text-red-300 transition-colors text-xs font-semibold px-2 py-1">
+                        Kosongkan
                     </button>
-                    <button id="btn-run-setup" class="hidden text-xs bg-white/10 hover:bg-white/20 text-white font-semibold px-3 py-1.5 rounded-lg border border-white/20 transition-all duration-200 flex items-center gap-1.5">
+                    <button id="btn-run-setup" class="hidden text-xs bg-white/10 hover:bg-white/20 text-white font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin hidden" id="spinner-setup" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4" />
                         </svg>
-                        <span>Isi Data Simulasi</span>
+                        <span>Simulasi</span>
                     </button>
-                    <button id="btn-logout" class="text-white/60 hover:text-white transition-colors text-xs font-medium">
+                    <button id="btn-logout" class="text-emerald-100/60 hover:text-white transition-colors text-xs font-semibold px-2 py-1">
                         Keluar
                     </button>
                 </div>
-                <div class="text-right hidden sm:block">
-                    <p class="text-xs text-gray-300 font-semibold uppercase tracking-wider" id="current-day">Memuat...</p>
-                    <p class="text-sm font-semibold text-white" id="current-date">--/--/----</p>
+                <div class="text-right hidden sm:block border-l border-emerald-500/15 pl-4">
+                    <p class="text-[11px] text-emerald-300/70 font-bold uppercase tracking-wider" id="current-day">Memuat...</p>
+                    <p class="text-xs font-bold text-white tracking-wide" id="current-date">--/--/----</p>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Auth Container -->
-    <div id="auth-container" class="flex-1 flex flex-col justify-center items-center py-12 relative z-10">
+    <div id="auth-container" class="flex-1 flex flex-col justify-center items-center py-16 relative z-10">
         <div class="w-full max-w-md mx-auto px-6">
-            <div class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-8 flex flex-col gap-6 animate-fade-in">
-                <div class="text-center border-b border-white/20 pb-4">
-                    <h2 id="auth-title" class="text-2xl font-bold text-white tracking-tight">Masuk ke Emerald</h2>
-                    <p class="text-xs text-gray-300 mt-1 font-medium">Melacak pengeluaran & pemasukan keuangan dengan presisi</p>
+            <div class="glass-card rounded-[2.5rem] p-8 flex flex-col gap-6 animate-fade-in shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+                <div class="text-center border-b border-emerald-500/15 pb-5">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto mb-3 flex items-center justify-center text-emerald-950 shadow-lg shadow-emerald-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 id="auth-title" class="text-2xl font-extrabold text-white tracking-tight">Masuk ke Emerald</h2>
+                    <p class="text-xs text-emerald-200/60 mt-1 font-medium">Kelola arus kas & anggaran finansial Anda</p>
                 </div>
                 <form id="form-auth" class="flex flex-col gap-5">
                     <div>
-                        <label for="auth-email" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Email</label>
-                        <input type="email" id="auth-email" required placeholder="nama@email.com" class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-white/50 focus:ring-0 placeholder:text-gray-400/50 transition-all font-medium text-sm">
+                        <label for="auth-email" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-2">Email</label>
+                        <input type="email" id="auth-email" required placeholder="nama@email.com" class="w-full px-4 py-3.5 bg-black/25 border border-emerald-500/20 rounded-2xl text-white placeholder:text-emerald-200/30 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 transition-all font-medium text-sm">
                     </div>
                     <div>
-                        <label for="auth-password" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
-                        <input type="password" id="auth-password" required placeholder="••••••••" class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-white/50 focus:ring-0 placeholder:text-gray-400/50 transition-all font-medium text-sm">
+                        <label for="auth-password" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-2">Password</label>
+                        <input type="password" id="auth-password" required placeholder="••••••••" class="w-full px-4 py-3.5 bg-black/25 border border-emerald-500/20 rounded-2xl text-white placeholder:text-emerald-200/30 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 transition-all font-medium text-sm">
                     </div>
                     <div class="flex flex-col gap-3 mt-2">
-                        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold rounded-xl transition-all duration-200 hover:-translate-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center gap-2">
+                        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-emerald-950 font-extrabold rounded-2xl transition-all duration-200 hover:-translate-y-0.5 shadow-[0_4px_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 text-sm">
                             Masuk
                         </button>
                     </div>
-                    <p class="text-xs text-center text-gray-300 mt-2 font-medium">
+                    <p class="text-xs text-center text-emerald-200/60 mt-2 font-medium">
                         <span id="auth-toggle-text">Belum punya akun?</span>
-                        <span id="auth-toggle-link" class="text-emerald-300 hover:text-emerald-400 font-bold cursor-pointer underline transition-colors ml-1">Daftar di sini</span>
+                        <span id="auth-toggle-link" class="text-emerald-400 hover:text-emerald-300 font-bold cursor-pointer underline transition-colors ml-1">Daftar di sini</span>
                     </p>
                 </form>
             </div>
@@ -173,78 +203,78 @@
             <!-- Top Section: Metric Cards -->
             <section class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in" style="animation-delay: 0.1s;">
                 <!-- Total Balance -->
-                <div class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 group">
+                <div class="glass-card glass-card-hover rounded-[2rem] p-6 flex flex-col justify-between">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-sm font-semibold text-gray-300 tracking-wide">Total Saldo Bersih</p>
-                            <h2 class="text-3xl font-bold mt-2 text-white transition-colors" id="val-balance-total">Rp 0</h2>
+                            <p class="text-xs font-bold uppercase tracking-wider text-emerald-200/70">Total Saldo Bersih</p>
+                            <h2 class="text-3xl font-extrabold mt-2 text-white tracking-tight" id="val-balance-total">Rp 0</h2>
                         </div>
-                        <div class="p-3 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl group-hover:bg-emerald-500/30 transition-all duration-300">
+                        <div class="p-3 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 rounded-2xl">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                         </div>
                     </div>
-                    <p class="text-xs text-emerald-300 font-medium mt-4 flex items-center gap-1">
-                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Akumulasi Pemasukan - Pengeluaran
+                    <p class="text-xs text-emerald-300 font-semibold mt-5 flex items-center gap-1.5">
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Akumulasi Total Pemasukan - Pengeluaran
                     </p>
                 </div>
 
                 <!-- Monthly Income -->
-                <div class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 group">
+                <div class="glass-card glass-card-hover rounded-[2rem] p-6 flex flex-col justify-between">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-sm font-semibold text-gray-300 tracking-wide">Pemasukan Bulan Ini</p>
-                            <h2 class="text-3xl font-bold mt-2 text-emerald-300 transition-colors" id="val-income-month">Rp 0</h2>
+                            <p class="text-xs font-bold uppercase tracking-wider text-emerald-200/70">Pemasukan Bulan Ini</p>
+                            <h2 class="text-3xl font-extrabold mt-2 text-emerald-400 tracking-tight" id="val-income-month">Rp 0</h2>
                         </div>
-                        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-xl group-hover:bg-emerald-500/20 transition-all duration-300">
+                        <div class="p-3 bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 rounded-2xl">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M7 11l5-5m0 0l5 5m-5-5v12" />
                             </svg>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-300 font-medium mt-4">Pemasukan kalender bulan ini</p>
+                    <p class="text-xs text-emerald-200/60 font-medium mt-5">Pemasukan bulan kalender saat ini</p>
                 </div>
 
                 <!-- Monthly Spending -->
-                <div class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 group">
+                <div class="glass-card glass-card-hover rounded-[2rem] p-6 flex flex-col justify-between">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-sm font-semibold text-gray-300 tracking-wide">Pengeluaran Bulan Ini</p>
-                            <h2 class="text-3xl font-bold mt-2 text-red-300 transition-colors" id="val-spending-month">Rp 0</h2>
+                            <p class="text-xs font-bold uppercase tracking-wider text-emerald-200/70">Pengeluaran Bulan Ini</p>
+                            <h2 class="text-3xl font-extrabold mt-2 text-rose-400 tracking-tight" id="val-spending-month">Rp 0</h2>
                         </div>
-                        <div class="p-3 bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl group-hover:bg-red-500/20 transition-all duration-300">
+                        <div class="p-3 bg-rose-500/15 border border-rose-500/25 text-rose-400 rounded-2xl">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 13l-5 5m0 0l-5-5m5 5V6" />
                             </svg>
                         </div>
                     </div>
-                    <div class="flex justify-between text-xs text-gray-300 font-medium mt-4">
-                        <span>Hari Ini: <strong class="text-white" id="val-spending-today">Rp 0</strong></span>
-                        <span>Minggu Ini: <strong class="text-white" id="val-spending-week">Rp 0</strong></span>
+                    <div class="flex justify-between text-xs text-emerald-200/60 font-semibold mt-5">
+                        <span>Hari Ini: <strong class="text-white font-bold" id="val-spending-today">Rp 0</strong></span>
+                        <span>Minggu Ini: <strong class="text-white font-bold" id="val-spending-week">Rp 0</strong></span>
                     </div>
                 </div>
             </section>
 
             <!-- Monthly Budget Widget Banner -->
-            <section class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-3xl p-5 animate-fade-in flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="w-full md:w-2/3">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">
+            <section class="glass-card rounded-[2rem] p-6 animate-fade-in flex flex-col md:flex-row items-center justify-between gap-5">
+                <div class="w-full md:w-3/4">
+                    <div class="flex justify-between items-center mb-2.5">
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                             </svg>
                             Batas Anggaran Bulanan
                         </span>
-                        <span class="text-xs font-semibold text-white" id="budget-progress-text">Rp 0 / Rp 0 (0%)</span>
+                        <span class="text-xs font-bold text-white tracking-wide" id="budget-progress-text">Rp 0 / Rp 0 (0%)</span>
                     </div>
-                    <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden border border-white/10">
-                        <div id="budget-progress-bar" class="h-full bg-emerald-400 transition-all duration-500 rounded-full" style="width: 0%;"></div>
+                    <div class="w-full h-3.5 bg-black/40 rounded-full overflow-hidden border border-emerald-500/20 p-0.5">
+                        <div id="budget-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5)]" style="width: 0%;"></div>
                     </div>
                 </div>
                 <div class="w-full md:w-auto flex justify-end">
-                    <button id="btn-set-budget" onclick="promptSetBudget()" class="text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
+                    <button id="btn-set-budget" onclick="openBudgetModal()" class="w-full md:w-auto text-xs bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold px-5 py-3 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         </svg>
@@ -263,7 +293,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-amber-200">Database memerlukan konfigurasi/pengisian data</h3>
-                        <p class="text-xs text-amber-100 mt-0.5">Kami mendeteksi database/tabel masih kosong. Klik "Isi Data Simulasi" untuk membuat data contoh instan.</p>
+                        <p class="text-xs text-amber-100 mt-0.5">Kami mendeteksi database masih kosong. Klik "Isi Data Simulasi" untuk membuat data contoh instan.</p>
                     </div>
                 </div>
                 <button onclick="runDatabaseSetup()" class="w-full sm:w-auto text-xs bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-4 py-2.5 rounded-xl transition-colors flex-shrink-0">
@@ -275,22 +305,22 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
                 
                 <!-- Left Column: Add Transaction Form (md:col-span-5) -->
-                <section class="md:col-span-5 bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-6 animate-fade-in" style="animation-delay: 0.2s;">
-                    <div class="border-b border-white/20 pb-4 mb-5 flex justify-between items-center">
+                <section class="md:col-span-5 glass-card rounded-[2.5rem] p-7 animate-fade-in" style="animation-delay: 0.2s;">
+                    <div class="border-b border-emerald-500/15 pb-4 mb-5 flex justify-between items-center">
                         <div>
-                            <h3 class="text-lg font-bold text-white">Tambah Transaksi</h3>
-                            <p class="text-xs text-gray-300 mt-0.5">Catat arus keuangan baru Anda</p>
+                            <h3 class="text-lg font-bold text-white tracking-tight">Tambah Transaksi</h3>
+                            <p class="text-xs text-emerald-200/60 mt-0.5 font-medium">Catat arus kas baru Anda</p>
                         </div>
                     </div>
 
-                    <!-- Type Selector Buttons -->
-                    <div class="grid grid-cols-2 gap-3 mb-5">
-                        <button type="button" id="btn-type-expense" onclick="setTransactionType('expense')" class="py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-white/30 bg-white/20 text-white shadow-lg">
-                            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <!-- Type Segmented Switch -->
+                    <div class="p-1 bg-black/40 border border-emerald-500/20 rounded-2xl grid grid-cols-2 gap-1 mb-5">
+                        <button type="button" id="btn-type-expense" onclick="setTransactionType('expense')" class="py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-md">
+                            <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
                             Pengeluaran
                         </button>
-                        <button type="button" id="btn-type-income" onclick="setTransactionType('income')" class="py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                        <button type="button" id="btn-type-income" onclick="setTransactionType('income')" class="py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 text-emerald-200/60 hover:text-white">
+                            <span class="w-2 h-2 rounded-full bg-emerald-700"></span>
                             Pemasukan
                         </button>
                     </div>
@@ -300,40 +330,40 @@
 
                         <!-- Amount Field -->
                         <div>
-                            <label for="input-amount" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Nominal</label>
+                            <label for="input-amount" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Nominal</label>
                             <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-semibold text-sm">Rp</span>
-                                <input type="number" step="1" min="1" id="input-amount" name="amount" required placeholder="0" class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-white/50 focus:ring-0 placeholder:text-gray-400 transition-all font-semibold text-base">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-extrabold text-sm">Rp</span>
+                                <input type="number" step="1" min="1" id="input-amount" name="amount" required placeholder="0" class="w-full pl-11 pr-4 py-3.5 bg-black/30 border border-emerald-500/20 rounded-2xl text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 placeholder:text-emerald-200/20 transition-all font-extrabold text-lg tracking-wide">
                             </div>
-                            <p class="text-red-400 text-xs mt-1 hidden" id="err-amount"></p>
+                            <p class="text-rose-400 text-xs mt-1 hidden" id="err-amount"></p>
                         </div>
 
                         <!-- Category Field -->
                         <div>
-                            <label for="input-category" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Kategori</label>
-                            <select id="input-category" name="category" required class="w-full px-4 py-3 bg-[#3f4044] border border-white/20 rounded-xl text-white focus:border-white/50 focus:ring-0 font-medium text-sm">
-                                <!-- Dynamically populated by JS -->
+                            <label for="input-category" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Kategori</label>
+                            <select id="input-category" name="category" required class="w-full px-4 py-3.5 bg-[#12201c] border border-emerald-500/20 rounded-2xl text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 font-semibold text-sm">
+                                <!-- Dynamically populated -->
                             </select>
-                            <p class="text-red-400 text-xs mt-1 hidden" id="err-category"></p>
+                            <p class="text-rose-400 text-xs mt-1 hidden" id="err-category"></p>
                         </div>
 
                         <!-- Date & Time Field -->
                         <div>
-                            <label for="input-date" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Tanggal & Waktu</label>
-                            <input type="datetime-local" id="input-date" name="date" required class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-white/50 focus:ring-0 font-medium text-sm">
-                            <p class="text-red-400 text-xs mt-1 hidden" id="err-date"></p>
+                            <label for="input-date" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Tanggal & Waktu</label>
+                            <input type="datetime-local" id="input-date" name="date" required class="w-full px-4 py-3.5 bg-black/30 border border-emerald-500/20 rounded-2xl text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 font-semibold text-sm">
+                            <p class="text-rose-400 text-xs mt-1 hidden" id="err-date"></p>
                         </div>
 
                         <!-- Description Field -->
                         <div>
-                            <label for="input-description" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Deskripsi <span class="text-gray-400 font-normal">(Opsional)</span></label>
-                            <textarea id="input-description" name="description" rows="2" placeholder="Catatan transaksi..." class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-white/50 focus:ring-0 placeholder:text-gray-400 transition-all font-medium text-sm"></textarea>
-                            <p class="text-red-400 text-xs mt-1 hidden" id="err-description"></p>
+                            <label for="input-description" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Deskripsi <span class="text-emerald-200/40 font-normal">(Opsional)</span></label>
+                            <textarea id="input-description" name="description" rows="2" placeholder="Catatan transaksi..." class="w-full px-4 py-3 bg-black/30 border border-emerald-500/20 rounded-2xl text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 placeholder:text-emerald-200/20 transition-all font-medium text-sm"></textarea>
+                            <p class="text-rose-400 text-xs mt-1 hidden" id="err-description"></p>
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" id="btn-submit" class="w-full py-3.5 bg-emerald-500/30 hover:bg-emerald-500/40 border border-emerald-500/40 text-white font-bold rounded-xl transition-all duration-200 mt-1 hover:-translate-y-0.5 shadow-lg flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <button type="submit" id="btn-submit" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-emerald-950 font-extrabold rounded-2xl transition-all duration-200 mt-2 hover:-translate-y-0.5 shadow-[0_4px_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 text-sm tracking-wide">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
                             Simpan Transaksi
@@ -342,81 +372,84 @@
                 </section>
 
                 <!-- Right Column: Visual Analytics & Chart (md:col-span-7) -->
-                <section class="md:col-span-7 bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-6 flex flex-col animate-fade-in" style="animation-delay: 0.25s;">
-                    <div class="border-b border-white/20 pb-4 mb-4 flex justify-between items-center">
+                <section class="md:col-span-7 glass-card rounded-[2.5rem] p-7 flex flex-col animate-fade-in min-h-[460px]" style="animation-delay: 0.25s;">
+                    <div class="border-b border-emerald-500/15 pb-4 mb-5 flex justify-between items-center">
                         <div>
-                            <h3 class="text-lg font-bold text-white">Analisis Pengeluaran</h3>
-                            <p class="text-xs text-gray-300 mt-0.5">Proporsi pengeluaran berdasarkan kategori bulan ini</p>
+                            <h3 class="text-lg font-bold text-white tracking-tight">Analisis Pengeluaran</h3>
+                            <p class="text-xs text-emerald-200/60 mt-0.5 font-medium">Proporsi pengeluaran berdasarkan kategori bulan ini</p>
                         </div>
                     </div>
-                    <div class="relative w-full h-[280px] flex items-center justify-center py-2">
-                        <canvas id="chart-category"></canvas>
-                        <div id="chart-empty-msg" class="absolute inset-0 flex items-center justify-center text-xs text-gray-400 hidden">
-                            Belum ada data pengeluaran bulan ini.
+                    <div class="relative w-full flex-1 flex items-center justify-center py-4">
+                        <canvas id="chart-category" class="max-h-[300px]"></canvas>
+                        <div id="chart-empty-msg" class="absolute inset-0 flex flex-col items-center justify-center text-xs text-emerald-200/50 hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-emerald-500/30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                            </svg>
+                            <span>Belum ada pengeluaran bulan ini.</span>
                         </div>
                     </div>
                 </section>
             </div>
 
             <!-- Ledger Table Section with Filters & Search -->
-            <section class="bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem] p-6 flex flex-col min-h-[500px] animate-fade-in" style="animation-delay: 0.3s;">
-                <div class="border-b border-white/20 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <section class="glass-card rounded-[2.5rem] p-7 flex flex-col min-h-[500px] animate-fade-in" style="animation-delay: 0.3s;">
+                <div class="border-b border-emerald-500/15 pb-5 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h3 class="text-lg font-bold text-white">Riwayat Transaksi</h3>
-                        <p class="text-xs text-gray-300 mt-0.5 font-medium">Buku besar aktivitas keuangan lengkap Anda</p>
+                        <h3 class="text-lg font-bold text-white tracking-tight">Riwayat Transaksi</h3>
+                        <p class="text-xs text-emerald-200/60 mt-0.5 font-medium">Buku besar aktivitas keuangan lengkap Anda</p>
                     </div>
 
                     <!-- Filter and Search Controls -->
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                         <!-- Search Box -->
-                        <div class="relative flex-1 md:w-48">
-                            <input type="text" id="filter-search" placeholder="Cari..." class="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/20 rounded-xl text-white text-xs backdrop-blur-sm focus:border-white/50 focus:ring-0 placeholder:text-gray-400 font-medium">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div class="relative flex-1 md:w-52">
+                            <input type="text" id="filter-search" placeholder="Cari..." class="w-full pl-9 pr-3 py-2.5 bg-black/30 border border-emerald-500/20 rounded-2xl text-white text-xs placeholder:text-emerald-200/30 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-400/60 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
 
                         <!-- Type Filter -->
-                        <select id="filter-type" class="px-3 py-2 bg-[#3f4044] border border-white/20 rounded-xl text-white text-xs font-medium focus:border-white/50 focus:ring-0">
+                        <select id="filter-type" class="px-3.5 py-2.5 bg-[#12201c] border border-emerald-500/20 rounded-2xl text-white text-xs font-semibold focus:border-emerald-400 focus:ring-0">
                             <option value="all">Semua Tipe</option>
                             <option value="expense">Pengeluaran</option>
                             <option value="income">Pemasukan</option>
                         </select>
 
                         <!-- Category Filter -->
-                        <select id="filter-category" class="px-3 py-2 bg-[#3f4044] border border-white/20 rounded-xl text-white text-xs font-medium focus:border-white/50 focus:ring-0">
+                        <select id="filter-category" class="px-3.5 py-2.5 bg-[#12201c] border border-emerald-500/20 rounded-2xl text-white text-xs font-semibold focus:border-emerald-400 focus:ring-0">
                             <option value="all">Semua Kategori</option>
                         </select>
 
-                        <span class="bg-white/10 border border-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider" id="lbl-total-count">0 transaksi</span>
+                        <span class="bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider" id="lbl-total-count">0 transaksi</span>
                     </div>
                 </div>
 
                 <!-- Loader Table State -->
-                <div id="table-loader" class="flex-1 flex flex-col items-center justify-center py-12 gap-3 text-gray-300">
-                    <svg class="animate-spin h-8 w-8 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <div id="table-loader" class="flex-1 flex flex-col items-center justify-center py-16 gap-3 text-emerald-200/60">
+                    <svg class="animate-spin h-8 w-8 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span class="text-xs font-semibold">Memuat riwayat transaksi...</span>
+                    <span class="text-xs font-semibold">Memuat data transaksi...</span>
                 </div>
 
                 <!-- Empty State -->
-                <div id="table-empty" class="hidden flex-1 flex flex-col items-center justify-center py-12 text-gray-300 text-center">
-                    <div class="w-16 h-16 bg-white/5 border border-white/10 text-white rounded-full flex items-center justify-center mb-4">
+                <div id="table-empty" class="hidden flex-1 flex flex-col items-center justify-center py-16 text-emerald-200/60 text-center">
+                    <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01" />
                         </svg>
                     </div>
                     <h4 class="text-sm font-bold text-white">Tidak ada transaksi ditemukan</h4>
-                    <p class="text-xs text-gray-300 mt-1 max-w-xs leading-relaxed">Coba ubah kata kunci pencarian atau buat transaksi baru.</p>
+                    <p class="text-xs text-emerald-200/60 mt-1 max-w-xs leading-relaxed">Coba ubah kata kunci pencarian atau tambahkan transaksi baru.</p>
                 </div>
 
                 <!-- Minimalist Table -->
                 <div id="table-wrapper" class="hidden flex-1 overflow-x-auto scrollbar-ios max-h-[460px] overflow-y-auto pr-2">
                     <table class="w-full text-left border-collapse min-w-[550px]">
                         <thead>
-                            <tr class="border-b border-white/20 text-gray-300 text-[11px] font-bold uppercase tracking-wider">
+                            <tr class="border-b border-emerald-500/15 text-emerald-300/60 text-[11px] font-bold uppercase tracking-wider">
                                 <th class="pb-3 pt-1 w-[20%]">Kategori</th>
                                 <th class="pb-3 pt-1 w-[25%]">Tanggal & Waktu</th>
                                 <th class="pb-3 pt-1 hidden md:table-cell w-[30%]">Deskripsi</th>
@@ -424,7 +457,7 @@
                                 <th class="pb-3 pt-1 text-center w-[70px]">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="text-sm divide-y divide-white/10">
+                        <tbody id="table-body" class="text-sm divide-y divide-emerald-500/10">
                             <!-- Dynamic items injected here -->
                         </tbody>
                     </table>
@@ -434,11 +467,11 @@
     </div>
 
     <!-- Edit Transaction Modal -->
-    <div id="modal-edit" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-        <div class="bg-[#2D2D2D] border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-3xl max-w-lg w-full p-6 animate-fade-in">
-            <div class="flex justify-between items-center border-b border-white/10 pb-4 mb-4">
-                <h3 class="text-lg font-bold text-white">Edit Transaksi</h3>
-                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white transition-colors">
+    <div id="modal-edit" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-[2.5rem] max-w-lg w-full p-7 animate-fade-in shadow-[0_25px_60px_rgba(0,0,0,0.8)] border border-emerald-500/30">
+            <div class="flex justify-between items-center border-b border-emerald-500/15 pb-4 mb-5">
+                <h3 class="text-lg font-bold text-white tracking-tight">Edit Transaksi</h3>
+                <button onclick="closeEditModal()" class="text-emerald-200/50 hover:text-white transition-colors p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -448,47 +481,41 @@
             <form id="form-edit-transaction" class="flex flex-col gap-4">
                 <input type="hidden" id="edit-id">
                 
-                <!-- Type Edit -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Tipe</label>
-                    <select id="edit-type" class="w-full px-4 py-2.5 bg-[#3f4044] border border-white/20 rounded-xl text-white text-sm font-medium focus:ring-0">
+                    <label class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Tipe</label>
+                    <select id="edit-type" class="w-full px-4 py-3 bg-[#12201c] border border-emerald-500/20 rounded-2xl text-white text-sm font-semibold">
                         <option value="expense">Pengeluaran</option>
                         <option value="income">Pemasukan</option>
                     </select>
                 </div>
 
-                <!-- Amount Edit -->
                 <div>
-                    <label for="edit-amount" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Nominal (Rp)</label>
-                    <input type="number" step="1" min="1" id="edit-amount" required class="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white text-sm font-semibold">
+                    <label for="edit-amount" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Nominal (Rp)</label>
+                    <input type="number" step="1" min="1" id="edit-amount" required class="w-full px-4 py-3 bg-black/30 border border-emerald-500/20 rounded-2xl text-white text-base font-extrabold">
                 </div>
 
-                <!-- Category Edit -->
                 <div>
-                    <label for="edit-category" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Kategori</label>
-                    <select id="edit-category" required class="w-full px-4 py-2.5 bg-[#3f4044] border border-white/20 rounded-xl text-white text-sm font-medium">
+                    <label for="edit-category" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Kategori</label>
+                    <select id="edit-category" required class="w-full px-4 py-3 bg-[#12201c] border border-emerald-500/20 rounded-2xl text-white text-sm font-semibold">
                         <!-- Populated dynamically -->
                     </select>
                 </div>
 
-                <!-- Date Edit -->
                 <div>
-                    <label for="edit-date" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Tanggal & Waktu</label>
-                    <input type="datetime-local" id="edit-date" required class="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white text-sm font-medium">
+                    <label for="edit-date" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Tanggal & Waktu</label>
+                    <input type="datetime-local" id="edit-date" required class="w-full px-4 py-3 bg-black/30 border border-emerald-500/20 rounded-2xl text-white text-sm font-semibold">
                 </div>
 
-                <!-- Description Edit -->
                 <div>
-                    <label for="edit-description" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5">Deskripsi</label>
-                    <textarea id="edit-description" rows="2" class="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white text-sm font-medium"></textarea>
+                    <label for="edit-description" class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Deskripsi</label>
+                    <textarea id="edit-description" rows="2" class="w-full px-4 py-3 bg-black/30 border border-emerald-500/20 rounded-2xl text-white text-sm font-medium"></textarea>
                 </div>
 
-                <!-- Modal Actions -->
-                <div class="flex justify-end gap-3 mt-2 pt-3 border-t border-white/10">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-colors">
+                <div class="flex justify-end gap-3 mt-3 pt-4 border-t border-emerald-500/15">
+                    <button type="button" onclick="closeEditModal()" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-white rounded-2xl text-xs font-semibold transition-colors">
                         Batal
                     </button>
-                    <button type="submit" id="btn-save-edit" class="px-5 py-2.5 bg-emerald-500/30 hover:bg-emerald-500/40 border border-emerald-500/40 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+                    <button type="submit" id="btn-save-edit" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-emerald-950 font-extrabold rounded-2xl text-xs transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)]">
                         Simpan Perubahan
                     </button>
                 </div>
@@ -496,8 +523,79 @@
         </div>
     </div>
 
+    <!-- Custom Budget Settings Modal (Replaces browser prompt) -->
+    <div id="modal-budget" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-[2.5rem] max-w-md w-full p-7 animate-fade-in shadow-[0_25px_60px_rgba(0,0,0,0.8)] border border-emerald-500/30">
+            <div class="flex justify-between items-center border-b border-emerald-500/15 pb-4 mb-5">
+                <h3 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    </svg>
+                    Target Anggaran Bulanan
+                </h3>
+                <button onclick="closeBudgetModal()" class="text-emerald-200/50 hover:text-white transition-colors p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <p class="text-xs text-emerald-200/70 font-medium">Tentukan batas maksimal pengeluaran yang ingin Anda kontrol setiap bulannya.</p>
+
+                <!-- Input Budget -->
+                <div>
+                    <label class="block text-[11px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1.5">Batas Nominal (Rp)</label>
+                    <input type="number" step="500000" min="100000" id="input-budget-target" placeholder="5000000" class="w-full px-4 py-3.5 bg-black/30 border border-emerald-500/20 rounded-2xl text-white text-lg font-extrabold focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50">
+                </div>
+
+                <!-- Preset Quick Pills -->
+                <div>
+                    <label class="block text-[11px] font-bold text-emerald-200/60 uppercase tracking-wider mb-2">Pilihan Cepat</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setPresetBudget(2000000)" class="py-2 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-xs font-bold transition-all">2 Juta</button>
+                        <button type="button" onclick="setPresetBudget(5000000)" class="py-2 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-xs font-bold transition-all">5 Juta</button>
+                        <button type="button" onclick="setPresetBudget(10000000)" class="py-2 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-xs font-bold transition-all">10 Juta</button>
+                        <button type="button" onclick="setPresetBudget(15000000)" class="py-2 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-xs font-bold transition-all">15 Juta</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-3 pt-4 border-t border-emerald-500/15">
+                    <button type="button" onclick="closeBudgetModal()" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-white rounded-2xl text-xs font-semibold transition-colors">
+                        Batal
+                    </button>
+                    <button type="button" onclick="saveBudgetModal()" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-emerald-950 font-extrabold rounded-2xl text-xs transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)]">
+                        Simpan Target
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces browser confirm) -->
+    <div id="modal-confirm" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-card rounded-[2.5rem] max-w-md w-full p-7 animate-fade-in shadow-[0_25px_60px_rgba(0,0,0,0.8)] border border-emerald-500/30">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 id="confirm-title" class="text-lg font-bold text-white tracking-tight">Konfirmasi Tindakan</h3>
+            <p id="confirm-message" class="text-xs text-emerald-200/70 font-medium mt-2 leading-relaxed">Apakah Anda yakin ingin melakukan tindakan ini?</p>
+
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-emerald-500/15">
+                <button type="button" id="confirm-btn-cancel" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-white rounded-2xl text-xs font-semibold transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="confirm-btn-action" class="px-6 py-3 bg-rose-500/80 hover:bg-rose-500 text-white font-extrabold rounded-2xl text-xs transition-all shadow-[0_4px_20px_rgba(244,63,94,0.3)]">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
-    <footer class="text-sm text-white/50 text-center pb-8 pt-12 opacity-75 hover:opacity-100 transition-opacity duration-200">
+    <footer class="text-xs text-emerald-200/40 text-center pb-8 pt-12 opacity-80 hover:opacity-100 transition-opacity">
         Designed & Developed by @vlahadiqa.
     </footer>
 

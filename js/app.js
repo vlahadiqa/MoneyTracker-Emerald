@@ -31,6 +31,7 @@ let isLoginMode = true;
 let allTransactions = [];
 let categoryChart = null;
 let monthlyBudgetLimit = parseFloat(localStorage.getItem('emerald_budget_limit')) || 5000000;
+let pendingConfirmCallback = null;
 
 // DOM Elements
 const currentDayEl = document.getElementById('current-day');
@@ -75,6 +76,17 @@ const editCategory = document.getElementById('edit-category');
 const editDate = document.getElementById('edit-date');
 const editDescription = document.getElementById('edit-description');
 
+// Budget Modal elements
+const modalBudget = document.getElementById('modal-budget');
+const inputBudgetTarget = document.getElementById('input-budget-target');
+
+// Confirm Modal elements
+const modalConfirm = document.getElementById('modal-confirm');
+const confirmTitle = document.getElementById('confirm-title');
+const confirmMessage = document.getElementById('confirm-message');
+const confirmBtnAction = document.getElementById('confirm-btn-action');
+const confirmBtnCancel = document.getElementById('confirm-btn-cancel');
+
 // Errors
 const errAmount = document.getElementById('err-amount');
 const errCategory = document.getElementById('err-category');
@@ -105,7 +117,7 @@ const authToggleLink = document.getElementById('auth-toggle-link');
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Setup date display
+    // 1. Date formatting
     const today = new Date();
     const optionsDay = { weekday: 'long', month: 'long', day: 'numeric' };
     if (currentDayEl) currentDayEl.textContent = today.toLocaleDateString('id-ID', optionsDay);
@@ -119,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const localNow = new Date(now.getTime() - offsetMs);
     if (inputDate) inputDate.value = localNow.toISOString().slice(0, 16);
 
-    // 3. Populate initial categories for Expense
+    // 3. Populate categories for Expense initially
     setTransactionType('expense');
     populateFilterCategories();
 
@@ -136,6 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (formEditTransaction) formEditTransaction.addEventListener('submit', handleSaveEdit);
     if (editType) editType.addEventListener('change', () => {
         populateCategoriesForSelect(editCategory, editType.value === 'expense' ? expenseCategories : incomeCategories);
+    });
+
+    if (confirmBtnCancel) confirmBtnCancel.addEventListener('click', closeConfirmModal);
+    if (confirmBtnAction) confirmBtnAction.addEventListener('click', () => {
+        if (typeof pendingConfirmCallback === 'function') {
+            pendingConfirmCallback();
+        }
+        closeConfirmModal();
     });
 
     if (formAuth) formAuth.addEventListener('submit', handleAuthSubmit);
@@ -176,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Switch Transaction Type (Expense vs Income)
+// Switch Transaction Type
 function setTransactionType(type) {
     currentType = type;
     if (inputType) inputType.value = type;
@@ -185,22 +205,22 @@ function setTransactionType(type) {
 
     if (type === 'expense') {
         if (btnTypeExpense) {
-            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-red-500/40 bg-red-500/20 text-white shadow-lg";
-            btnTypeExpense.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
+            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-md";
+            btnTypeExpense.querySelector('span').className = "w-2 h-2 rounded-full bg-rose-400 animate-pulse";
         }
         if (btnTypeIncome) {
-            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5";
-            btnTypeIncome.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-zinc-700";
+            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 text-emerald-200/60 hover:text-white";
+            btnTypeIncome.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-700";
         }
         populateCategoriesForSelect(inputCategory, expenseCategories);
     } else {
         if (btnTypeIncome) {
-            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/20 text-white shadow-lg";
-            btnTypeIncome.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-md";
+            btnTypeIncome.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         }
         if (btnTypeExpense) {
-            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-1.5 border border-transparent text-gray-300 hover:text-white bg-white/5";
-            btnTypeExpense.querySelector('span').className = "w-2.5 h-2.5 rounded-full bg-zinc-700";
+            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 text-emerald-200/60 hover:text-white";
+            btnTypeExpense.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-700";
         }
         populateCategoriesForSelect(inputCategory, incomeCategories);
     }
@@ -229,7 +249,7 @@ function populateFilterCategories() {
     });
 }
 
-// Fetch dashboard stats & transactions
+// Fetch Dashboard Data
 async function fetchDashboardData() {
     if (!currentSession || !currentSession.user) {
         showLedgerState('empty');
@@ -249,7 +269,6 @@ async function fetchDashboardData() {
 
         allTransactions = transactions || [];
 
-        // Aggregations
         const today = new Date();
         let spendingToday = 0;
         let spendingWeek = 0;
@@ -288,20 +307,14 @@ async function fetchDashboardData() {
 
         const netBalance = totalIncomeAll - totalExpenseAll;
 
-        // Update Metric Cards
         if (valBalanceTotal) valBalanceTotal.textContent = formatCurrency(netBalance);
         if (valIncomeMonth) valIncomeMonth.textContent = formatCurrency(incomeMonth);
         if (valSpendingMonth) valSpendingMonth.textContent = formatCurrency(spendingMonth);
         if (valSpendingToday) valSpendingToday.textContent = formatCurrency(spendingToday);
         if (valSpendingWeek) valSpendingWeek.textContent = formatCurrency(spendingWeek);
 
-        // Update Budget Widget
         renderBudgetTracker(spendingMonth);
-
-        // Update Category Donut Chart
-        renderCategoryChart(categoryExpensesMonth);
-
-        // Apply search/filters & render table
+        renderCategoryChart(categoryExpensesMonth, spendingMonth);
         applyFilters();
 
         if (bannerDbStatus) bannerDbStatus.classList.add('hidden');
@@ -309,7 +322,7 @@ async function fetchDashboardData() {
         if (btnClearData) btnClearData.classList.remove('hidden');
     } catch (error) {
         console.error('Fetch dashboard failed:', error);
-        showToast(error.message || 'Gagal terhubung ke Supabase. Harap periksa database Anda.', 'error');
+        showToast(error.message || 'Gagal terhubung ke Supabase database Anda.', 'error');
         
         if (bannerDbStatus) bannerDbStatus.classList.remove('hidden');
         if (btnRunSetup) btnRunSetup.classList.remove('hidden');
@@ -318,7 +331,7 @@ async function fetchDashboardData() {
     }
 }
 
-// Budget Tracker Render & Settings
+// Budget Tracker Render & Custom Modal
 function renderBudgetTracker(spendingMonth) {
     const progressText = document.getElementById('budget-progress-text');
     const progressBar = document.getElementById('budget-progress-bar');
@@ -329,31 +342,56 @@ function renderBudgetTracker(spendingMonth) {
     progressBar.style.width = `${percentage}%`;
 
     if (percentage >= 100) {
-        progressBar.className = "h-full bg-red-500 animate-pulse transition-all duration-500 rounded-full";
+        progressBar.className = "h-full bg-gradient-to-r from-rose-500 to-red-600 animate-pulse transition-all duration-500 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.6)]";
     } else if (percentage >= 80) {
-        progressBar.className = "h-full bg-amber-400 transition-all duration-500 rounded-full";
+        progressBar.className = "h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)]";
     } else {
-        progressBar.className = "h-full bg-emerald-400 transition-all duration-500 rounded-full";
+        progressBar.className = "h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5)]";
     }
 }
 
-function promptSetBudget() {
-    const input = prompt('Masukkan target batas anggaran bulanan Anda (dalam Rupiah):', monthlyBudgetLimit);
-    if (input !== null) {
-        const val = parseFloat(input.replace(/[^0-9]/g, ''));
-        if (!isNaN(val) && val > 0) {
-            monthlyBudgetLimit = val;
-            localStorage.setItem('emerald_budget_limit', val);
-            showToast('Target anggaran bulanan berhasil diperbarui!', 'success');
-            fetchDashboardData();
-        } else {
-            showToast('Target anggaran harus berupa angka positif.', 'error');
-        }
+function openBudgetModal() {
+    if (inputBudgetTarget) inputBudgetTarget.value = monthlyBudgetLimit;
+    if (modalBudget) modalBudget.classList.remove('hidden');
+}
+
+function closeBudgetModal() {
+    if (modalBudget) modalBudget.classList.add('hidden');
+}
+
+function setPresetBudget(amount) {
+    if (inputBudgetTarget) inputBudgetTarget.value = amount;
+}
+
+function saveBudgetModal() {
+    if (!inputBudgetTarget) return;
+    const val = parseFloat(inputBudgetTarget.value);
+    if (!isNaN(val) && val > 0) {
+        monthlyBudgetLimit = val;
+        localStorage.setItem('emerald_budget_limit', val);
+        showToast('Target anggaran bulanan berhasil diperbarui!', 'success');
+        closeBudgetModal();
+        fetchDashboardData();
+    } else {
+        showToast('Target anggaran harus berupa angka positif.', 'error');
     }
 }
 
-// Chart.js Category Breakdown Rendering
-function renderCategoryChart(categoryData) {
+// Custom Glass Confirm Dialog (Replaces browser confirm)
+function showConfirmModal(title, message, onConfirm) {
+    if (confirmTitle) confirmTitle.textContent = title;
+    if (confirmMessage) confirmMessage.textContent = message;
+    pendingConfirmCallback = onConfirm;
+    if (modalConfirm) modalConfirm.classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+    pendingConfirmCallback = null;
+    if (modalConfirm) modalConfirm.classList.add('hidden');
+}
+
+// Chart.js Category Breakdown Rendering with Center Text
+function renderCategoryChart(categoryData, totalExpense) {
     const canvas = document.getElementById('chart-category');
     const emptyMsg = document.getElementById('chart-empty-msg');
     if (!canvas) return;
@@ -369,13 +407,36 @@ function renderCategoryChart(categoryData) {
         if (emptyMsg) emptyMsg.classList.add('hidden');
     }
 
-    const colors = [
-        '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1'
+    const radiantColors = [
+        '#10b981', '#14b8a6', '#f59e0b', '#f43f5e', '#6366f1', '#a855f7', '#3b82f6'
     ];
 
     if (categoryChart) {
         categoryChart.destroy();
     }
+
+    // Custom Plugin to draw text inside doughnut center
+    const centerTextPlugin = {
+        id: 'centerText',
+        afterDraw(chart) {
+            const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const centerX = left + width / 2;
+            const centerY = top + height / 2;
+
+            ctx.font = '600 11px Outfit';
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.7)';
+            ctx.fillText('TOTAL PENGELUARAN', centerX, centerY - 10);
+
+            ctx.font = '800 16px Outfit';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(formatCurrency(totalExpense), centerX, centerY + 10);
+            ctx.restore();
+        }
+    };
 
     const ctx = canvas.getContext('2d');
     categoryChart = new Chart(ctx, {
@@ -384,26 +445,34 @@ function renderCategoryChart(categoryData) {
             labels: labels,
             datasets: [{
                 data: dataValues,
-                backgroundColor: colors.slice(0, labels.length),
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-                borderWidth: 2,
-                hoverOffset: 6
+                backgroundColor: radiantColors.slice(0, labels.length),
+                borderColor: 'rgba(18, 32, 28, 0.8)',
+                borderWidth: 3,
+                hoverOffset: 8
             }]
         },
+        plugins: [centerTextPlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right',
+                    position: 'bottom',
                     labels: {
-                        color: '#E5E7EB',
-                        font: { family: 'Outfit', size: 12 },
-                        padding: 14,
-                        usePointStyle: true
+                        color: '#D1FAE5',
+                        font: { family: 'Outfit', size: 12, weight: '600' },
+                        padding: 16,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
                     }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(14, 26, 23, 0.9)',
+                    titleFont: { family: 'Outfit', size: 13, weight: '700' },
+                    bodyFont: { family: 'Outfit', size: 12, weight: '600' },
+                    padding: 12,
+                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                    borderWidth: 1,
                     callbacks: {
                         label: function(context) {
                             const val = context.parsed || 0;
@@ -412,7 +481,7 @@ function renderCategoryChart(categoryData) {
                     }
                 }
             },
-            cutout: '70%'
+            cutout: '72%'
         }
     });
 }
@@ -424,16 +493,12 @@ function applyFilters() {
     const catVal = filterCategory ? filterCategory.value : 'all';
 
     const filtered = allTransactions.filter(tx => {
-        // Search match
         const descMatch = (tx.description || '').toLowerCase().includes(searchTerm);
         const catMatchSearch = (tx.category || '').toLowerCase().includes(searchTerm);
         const amountMatch = (tx.amount || '').toString().includes(searchTerm);
         const matchesSearch = !searchTerm || descMatch || catMatchSearch || amountMatch;
 
-        // Type match
         const matchesType = typeVal === 'all' || tx.type === typeVal;
-
-        // Category match
         const matchesCat = catVal === 'all' || tx.category === catVal;
 
         return matchesSearch && matchesType && matchesCat;
@@ -453,35 +518,35 @@ function renderTransactionsTable(list) {
         tableBody.innerHTML = '';
         list.forEach(tx => {
             const row = document.createElement('tr');
-            row.className = "hover:bg-white/5 transition-colors group";
+            row.className = "hover:bg-emerald-500/10 transition-all duration-200 group border-b border-emerald-500/10";
             
             const isIncome = tx.type === 'income';
-            const badgeBg = isIncome ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' : 'bg-red-500/20 text-red-300 border border-red-500/20';
+            const badgeBg = isIncome ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
             const sign = isIncome ? '+' : '-';
-            const textClass = isIncome ? 'text-emerald-300 font-semibold' : 'text-zinc-200 font-medium';
+            const textClass = isIncome ? 'text-emerald-400 font-extrabold' : 'text-emerald-100 font-bold';
             const formattedDate = formatDateString(tx.date);
 
             row.innerHTML = `
                 <td class="py-3.5 pr-2">
-                    <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${badgeBg}">
+                    <span class="inline-block px-3 py-1 rounded-xl text-xs font-bold ${badgeBg} shadow-sm">
                         ${escapeHtml(tx.category)}
                     </span>
                 </td>
-                <td class="py-3.5 pr-2 text-xs text-gray-300 font-semibold">${formattedDate}</td>
-                <td class="py-3.5 pr-2 text-xs text-gray-300 max-w-[180px] truncate hidden md:table-cell" title="${escapeHtml(tx.description || '')}">
+                <td class="py-3.5 pr-2 text-xs text-emerald-200/80 font-semibold">${formattedDate}</td>
+                <td class="py-3.5 pr-2 text-xs text-emerald-200/60 max-w-[180px] truncate hidden md:table-cell" title="${escapeHtml(tx.description || '')}">
                     ${escapeHtml(tx.description || '—')}
                 </td>
-                <td class="py-3.5 pr-2 text-right ${textClass}">
+                <td class="py-3.5 pr-2 text-right ${textClass} text-base tracking-wide">
                     ${sign} ${formatCurrency(tx.amount)}
                 </td>
                 <td class="py-3.5 text-center w-[70px]">
                     <div class="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
-                        <button onclick="openEditModal(${tx.id})" class="p-1 text-gray-400 hover:text-emerald-300 rounded transition-colors" title="Edit Transaksi">
+                        <button onclick="openEditModal(${tx.id})" class="p-1.5 text-emerald-300/70 hover:text-emerald-300 rounded-lg hover:bg-emerald-500/20 transition-all" title="Edit Transaksi">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                         </button>
-                        <button onclick="handleDeleteTransaction(${tx.id})" class="p-1 text-gray-400 hover:text-red-400 rounded transition-colors" title="Hapus Transaksi">
+                        <button onclick="handleDeleteTransaction(${tx.id})" class="p-1.5 text-rose-400/70 hover:text-rose-400 rounded-lg hover:bg-rose-500/20 transition-all" title="Hapus Transaksi">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -510,7 +575,7 @@ function showLedgerState(state) {
     }
 }
 
-// Add Transaction Form Submission
+// Add Transaction Submission
 async function handleAddTransaction(e) {
     e.preventDefault();
     clearValidationErrors();
@@ -518,7 +583,7 @@ async function handleAddTransaction(e) {
     const originalBtnContent = btnSubmit.innerHTML;
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-emerald-950 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
@@ -594,7 +659,6 @@ function openEditModal(id) {
     if (editType) editType.value = tx.type;
     if (editAmount) editAmount.value = tx.amount;
     
-    // Populate categories based on type
     const categories = tx.type === 'expense' ? expenseCategories : incomeCategories;
     populateCategoriesForSelect(editCategory, categories);
     if (editCategory) editCategory.value = tx.category;
@@ -627,7 +691,7 @@ async function handleSaveEdit(e) {
     const description = editDescription.value.trim();
 
     if (isNaN(amount) || amount <= 0 || !category || !dateVal) {
-        showToast('Harap lengkapi semua kolom wajib dengan benar.', 'error');
+        showToast('Harap lengkapi semua kolom wajib.', 'error');
         return;
     }
 
@@ -656,37 +720,39 @@ async function handleSaveEdit(e) {
         fetchDashboardData();
     } catch (error) {
         console.error('Update transaction error:', error);
-        showToast(error.message || 'Gagal menyukai transaksi.', 'error');
+        showToast(error.message || 'Gagal menyimpan transaksi.', 'error');
     } finally {
         if (btnSave) btnSave.disabled = false;
     }
 }
 
-// Delete Transaction
-async function handleDeleteTransaction(id) {
-    if (!confirm('Apakah Anda yakin ingin menghapus catatan transaksi ini secara permanen?')) {
-        return;
-    }
+// Delete Transaction using Custom Glass Modal
+function handleDeleteTransaction(id) {
+    showConfirmModal(
+        'Hapus Transaksi?',
+        'Apakah Anda yakin ingin menghapus catatan transaksi ini secara permanen? Tindakan ini tidak dapat dibatalkan.',
+        async () => {
+            try {
+                const query = supabaseClient
+                    .from('transactions')
+                    .delete()
+                    .eq('id', id);
 
-    try {
-        const query = supabaseClient
-            .from('transactions')
-            .delete()
-            .eq('id', id);
+                if (currentSession && currentSession.user) {
+                    query.eq('user_id', currentSession.user.id);
+                }
 
-        if (currentSession && currentSession.user) {
-            query.eq('user_id', currentSession.user.id);
+                const { error } = await query;
+                if (error) throw error;
+
+                showToast('Transaksi berhasil dihapus.', 'success');
+                fetchDashboardData();
+            } catch (error) {
+                console.error('Delete transaction error:', error);
+                showToast(error.message || 'Gagal menghapus transaksi.', 'error');
+            }
         }
-
-        const { error } = await query;
-        if (error) throw error;
-
-        showToast('Transaksi berhasil dihapus.', 'success');
-        fetchDashboardData();
-    } catch (error) {
-        console.error('Delete transaction error:', error);
-        showToast(error.message || 'Gagal menghapus transaksi.', 'error');
-    }
+    );
 }
 
 // Export CSV Feature
@@ -719,7 +785,7 @@ function handleExportCSV() {
     showToast('File CSV berhasil diunduh!', 'success');
 }
 
-// Automated Setup and Seeding with Dual Types (Expense + Income)
+// Automated Setup and Seeding
 async function runDatabaseSetup() {
     if (spinnerSetup) spinnerSetup.classList.remove('hidden');
     if (btnRunSetup) btnRunSetup.disabled = true;
@@ -745,7 +811,7 @@ async function runDatabaseSetup() {
                 description: 'Gaji Bulanan Pekerjaan Utama'
             },
             {
-                amount: 1200000.00,
+                amount: 1500000.00,
                 type: 'income',
                 category: 'Pekerjaan Sampingan',
                 date: formatOffsetDate(8, '14:30:00'),
@@ -770,7 +836,7 @@ async function runDatabaseSetup() {
                 type: 'expense',
                 category: 'Belanja',
                 date: formatOffsetDate(3, '18:20:00'),
-                description: 'Pembelian mouse ergonomis & mousepad'
+                description: 'Pembelian mouse ergonomis'
             },
             {
                 amount: 186000.00,
@@ -784,7 +850,7 @@ async function runDatabaseSetup() {
                 type: 'expense',
                 category: 'Makanan & Minuman',
                 date: formatOffsetDate(0, '11:30:00'),
-                description: 'Belanja bahan makanan mingguan di supermarket'
+                description: 'Belanja mingguan supermarket'
             }
         ];
 
@@ -813,22 +879,22 @@ async function runDatabaseSetup() {
     }
 }
 
-// Helpers & Validation
+// Validation Helpers
 function displayValidationErrors(errors) {
     if (errors.amount && errAmount) {
         errAmount.textContent = errors.amount;
         errAmount.classList.remove('hidden');
-        inputAmount.classList.add('border-red-400/50');
+        inputAmount.classList.add('border-rose-400/50');
     }
     if (errors.category && errCategory) {
         errCategory.textContent = errors.category;
         errCategory.classList.remove('hidden');
-        inputCategory.classList.add('border-red-400/50');
+        inputCategory.classList.add('border-rose-400/50');
     }
     if (errors.date && errDate) {
         errDate.textContent = errors.date;
         errDate.classList.remove('hidden');
-        inputDate.classList.add('border-red-400/50');
+        inputDate.classList.add('border-rose-400/50');
     }
 }
 
@@ -843,7 +909,7 @@ function clearValidationErrors() {
 
     const inputs = [inputAmount, inputCategory, inputDate, inputDescription];
     inputs.forEach(input => {
-        if (input) input.classList.remove('border-red-400/50');
+        if (input) input.classList.remove('border-rose-400/50');
     });
 }
 
@@ -879,7 +945,7 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
-    toast.className = 'toast-enter max-w-sm w-full bg-white/20 border border-white/30 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.3)] rounded-2xl p-4 flex items-start gap-3 pointer-events-auto transition-all duration-300';
+    toast.className = 'toast-enter max-w-sm w-full bg-[#12201c]/90 border border-emerald-500/30 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl p-4 flex items-start gap-3 pointer-events-auto transition-all duration-300';
     
     let iconColor = 'text-emerald-300 bg-emerald-500/20';
     let iconSvg = `
@@ -889,7 +955,7 @@ function showToast(message, type = 'success') {
     `;
 
     if (type === 'error') {
-        iconColor = 'text-red-300 bg-red-500/20';
+        iconColor = 'text-rose-300 bg-rose-500/20';
         iconSvg = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -909,9 +975,9 @@ function showToast(message, type = 'success') {
             ${iconSvg}
         </div>
         <div class="flex-1">
-            <p class="text-xs font-semibold text-white leading-relaxed">${escapeHtml(message)}</p>
+            <p class="text-xs font-bold text-white leading-relaxed">${escapeHtml(message)}</p>
         </div>
-        <button onclick="this.parentElement.remove()" class="text-gray-300 hover:text-white transition-colors p-0.5">
+        <button onclick="this.parentElement.remove()" class="text-emerald-200/50 hover:text-white transition-colors p-0.5">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -940,30 +1006,32 @@ function escapeHtml(str) {
     );
 }
 
-async function handleClearData() {
-    if (!confirm('Apakah Anda yakin ingin mengosongkan semua data transaksi? Tindakan ini tidak dapat dibatalkan.')) {
-        return;
-    }
+function handleClearData() {
+    showConfirmModal(
+        'Kosongkan Semua Data?',
+        'Apakah Anda yakin ingin menghapus seluruh data transaksi Anda? Tindakan ini tidak dapat dibatalkan.',
+        async () => {
+            try {
+                showToast('Mengosongkan data...', 'warning');
+                const query = supabaseClient.from('transactions').delete();
 
-    try {
-        showToast('Mengosongkan data...', 'warning');
-        const query = supabaseClient.from('transactions').delete();
+                if (currentSession && currentSession.user) {
+                    query.eq('user_id', currentSession.user.id);
+                } else {
+                    query.neq('id', 0);
+                }
 
-        if (currentSession && currentSession.user) {
-            query.eq('user_id', currentSession.user.id);
-        } else {
-            query.neq('id', 0);
+                const { error } = await query;
+                if (error) throw error;
+
+                showToast('Semua data transaksi berhasil dikosongkan.', 'success');
+                fetchDashboardData();
+            } catch (error) {
+                console.error('Clear data error:', error);
+                showToast(error.message || 'Gagal mengosongkan data.', 'error');
+            }
         }
-
-        const { error } = await query;
-        if (error) throw error;
-
-        showToast('Semua data transaksi berhasil dikosongkan.', 'success');
-        fetchDashboardData();
-    } catch (error) {
-        console.error('Clear data error:', error);
-        showToast(error.message || 'Gagal mengosongkan data.', 'error');
-    }
+    );
 }
 
 function isSameWeek(txDate, refDate) {
@@ -1054,17 +1122,19 @@ async function handleAuthSubmit(e) {
     }
 }
 
-async function handleLogout() {
-    if (!confirm('Apakah Anda yakin ingin keluar dari aplikasi?')) {
-        return;
-    }
-    
-    try {
-        const { error } = await supabaseClient.auth.signOut();
-        if (error) throw error;
-        showToast('Berhasil keluar.', 'success');
-    } catch (error) {
-        console.error('Logout error:', error);
-        showToast(error.message || 'Gagal keluar dari aplikasi.', 'error');
-    }
+function handleLogout() {
+    showConfirmModal(
+        'Keluar dari Aplikasi?',
+        'Apakah Anda yakin ingin keluar dari akun Emerald Anda?',
+        async () => {
+            try {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) throw error;
+                showToast('Berhasil keluar.', 'success');
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast(error.message || 'Gagal keluar dari aplikasi.', 'error');
+            }
+        }
+    );
 }

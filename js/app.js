@@ -507,71 +507,113 @@ function applyFilters() {
     renderTransactionsTable(filtered);
 }
 
-// Render Transactions Table UI
+// Render Transactions Table UI & Mobile Card List
 function renderTransactionsTable(list) {
+    const mobileWrapper = document.getElementById('mobile-list-wrapper');
     if (lblTotalCount) lblTotalCount.textContent = `${list.length} transaksi`;
 
     if (list.length === 0) {
         showLedgerState('empty');
     } else {
         showLedgerState('table');
-        tableBody.innerHTML = '';
+        if (tableBody) tableBody.innerHTML = '';
+        if (mobileWrapper) mobileWrapper.innerHTML = '';
+
         list.forEach(tx => {
-            const row = document.createElement('tr');
-            row.className = "hover:bg-emerald-500/10 transition-all duration-200 group border-b border-emerald-500/10";
-            
             const isIncome = tx.type === 'income';
             const badgeBg = isIncome ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
             const sign = isIncome ? '+' : '-';
             const textClass = isIncome ? 'text-emerald-400 font-extrabold' : 'text-emerald-100 font-bold';
             const formattedDate = formatDateString(tx.date);
 
-            row.innerHTML = `
-                <td class="py-3.5 pr-2">
-                    <span class="inline-block px-3 py-1 rounded-xl text-xs font-bold ${badgeBg} shadow-sm">
-                        ${escapeHtml(tx.category)}
-                    </span>
-                </td>
-                <td class="py-3.5 pr-2 text-xs text-emerald-200/80 font-semibold">${formattedDate}</td>
-                <td class="py-3.5 pr-2 text-xs text-emerald-200/60 max-w-[180px] truncate hidden md:table-cell" title="${escapeHtml(tx.description || '')}">
-                    ${escapeHtml(tx.description || '—')}
-                </td>
-                <td class="py-3.5 pr-2 text-right ${textClass} text-base tracking-wide">
-                    ${sign} ${formatCurrency(tx.amount)}
-                </td>
-                <td class="py-3.5 text-center w-[70px]">
-                    <div class="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
-                        <button onclick="openEditModal(${tx.id})" class="p-1.5 text-emerald-300/70 hover:text-emerald-300 rounded-lg hover:bg-emerald-500/20 transition-all" title="Edit Transaksi">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                        <button onclick="handleDeleteTransaction(${tx.id})" class="p-1.5 text-rose-400/70 hover:text-rose-400 rounded-lg hover:bg-rose-500/20 transition-all" title="Hapus Transaksi">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+            // 1. Desktop Table Row (>= md)
+            if (tableBody) {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-emerald-500/10 transition-all duration-200 group border-b border-emerald-500/10";
+                row.innerHTML = `
+                    <td class="py-3.5 pr-2">
+                        <span class="inline-block px-3 py-1 rounded-xl text-xs font-bold ${badgeBg} shadow-sm">
+                            ${escapeHtml(tx.category)}
+                        </span>
+                    </td>
+                    <td class="py-3.5 pr-2 text-xs text-emerald-200/80 font-semibold">${formattedDate}</td>
+                    <td class="py-3.5 pr-2 text-xs text-emerald-200/60 max-w-[180px] truncate hidden md:table-cell" title="${escapeHtml(tx.description || '')}">
+                        ${escapeHtml(tx.description || '—')}
+                    </td>
+                    <td class="py-3.5 pr-2 text-right ${textClass} text-base tracking-wide">
+                        ${sign} ${formatCurrency(tx.amount)}
+                    </td>
+                    <td class="py-3.5 text-center w-[70px]">
+                        <div class="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
+                            <button onclick="openEditModal(${tx.id})" class="p-1.5 text-emerald-300/70 hover:text-emerald-300 rounded-lg hover:bg-emerald-500/20 transition-all" title="Edit Transaksi">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button onclick="handleDeleteTransaction(${tx.id})" class="p-1.5 text-rose-400/70 hover:text-rose-400 rounded-lg hover:bg-rose-500/20 transition-all" title="Hapus Transaksi">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            }
+
+            // 2. Mobile Responsive Card Item (< md)
+            if (mobileWrapper) {
+                const card = document.createElement('div');
+                card.className = "bg-black/35 border border-emerald-500/15 rounded-2xl p-3.5 flex flex-col gap-2 shadow-sm hover:border-emerald-500/30 transition-colors";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold ${badgeBg}">
+                                ${escapeHtml(tx.category)}
+                            </span>
+                            <span class="text-[10px] text-emerald-200/60 font-semibold">${formattedDate}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="openEditModal(${tx.id})" class="p-1 text-emerald-300/80 hover:text-emerald-300 rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button onclick="handleDeleteTransaction(${tx.id})" class="p-1 text-rose-400/80 hover:text-rose-400 rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                </td>
-            `;
-            tableBody.appendChild(row);
+                    <div class="flex justify-between items-end mt-0.5">
+                        <p class="text-xs text-emerald-100/80 truncate max-w-[190px] font-medium">${escapeHtml(tx.description || '—')}</p>
+                        <p class="text-sm ${textClass} tracking-wide">${sign} ${formatCurrency(tx.amount)}</p>
+                    </div>
+                `;
+                mobileWrapper.appendChild(card);
+            }
         });
     }
 }
 
 function showLedgerState(state) {
+    const mobileWrapper = document.getElementById('mobile-list-wrapper');
     if (state === 'loading') {
         if (tableLoader) tableLoader.classList.remove('hidden');
         if (tableEmpty) tableEmpty.classList.add('hidden');
         if (tableWrapper) tableWrapper.classList.add('hidden');
+        if (mobileWrapper) mobileWrapper.classList.add('hidden');
     } else if (state === 'empty') {
         if (tableLoader) tableLoader.classList.add('hidden');
         if (tableEmpty) tableEmpty.classList.remove('hidden');
         if (tableWrapper) tableWrapper.classList.add('hidden');
+        if (mobileWrapper) mobileWrapper.classList.add('hidden');
     } else {
         if (tableLoader) tableLoader.classList.add('hidden');
         if (tableEmpty) tableEmpty.classList.add('hidden');
         if (tableWrapper) tableWrapper.classList.remove('hidden');
+        if (mobileWrapper) mobileWrapper.classList.remove('hidden');
     }
 }
 

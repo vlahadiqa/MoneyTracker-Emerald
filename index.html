@@ -347,7 +347,7 @@
                             <label for="input-amount" class="block text-[10px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1">Nominal</label>
                             <div class="relative">
                                 <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 font-extrabold text-xs sm:text-sm">Rp</span>
-                                <input type="number" step="1" min="1" id="input-amount" name="amount" required placeholder="0" class="w-full pl-9 sm:pl-10 pr-3.5 py-2.5 sm:py-3 bg-black/30 border border-emerald-500/20 rounded-xl sm:rounded-2xl text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 placeholder:text-emerald-200/20 transition-all font-extrabold text-base tracking-wide">
+                                <input type="text" inputmode="numeric" id="input-amount" name="amount" required placeholder="0" class="w-full pl-9 sm:pl-10 pr-3.5 py-2.5 sm:py-3 bg-black/30 border border-emerald-500/20 rounded-xl sm:rounded-2xl text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 placeholder:text-emerald-200/20 transition-all font-extrabold text-base tracking-wide">
                             </div>
                             <p class="text-rose-400 text-xs mt-1 hidden" id="err-amount"></p>
                         </div>
@@ -508,7 +508,7 @@
 
                 <div>
                     <label for="edit-amount" class="block text-[10px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1">Nominal (Rp)</label>
-                    <input type="number" step="1" min="1" id="edit-amount" required class="w-full px-3.5 py-2.5 bg-black/30 border border-emerald-500/20 rounded-xl text-white text-sm sm:text-base font-extrabold">
+                    <input type="text" inputmode="numeric" id="edit-amount" required class="w-full px-3.5 py-2.5 bg-black/30 border border-emerald-500/20 rounded-xl text-white text-sm sm:text-base font-extrabold">
                 </div>
 
                 <div>
@@ -562,7 +562,7 @@
 
                 <div>
                     <label class="block text-[10px] font-bold text-emerald-200/80 uppercase tracking-wider mb-1">Batas Nominal (Rp)</label>
-                    <input type="number" step="500000" min="100000" id="input-budget-target" placeholder="5000000" class="w-full px-3.5 py-3 bg-black/30 border border-emerald-500/20 rounded-xl text-white text-base font-extrabold focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50">
+                    <input type="text" inputmode="numeric" id="input-budget-target" placeholder="5.000.000" class="w-full px-3.5 py-3 bg-black/30 border border-emerald-500/20 rounded-xl text-white text-base font-extrabold focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50">
                 </div>
 
                 <div>

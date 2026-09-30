@@ -115,6 +115,30 @@ const authSubmitBtn = document.getElementById('auth-submit-btn');
 const authToggleText = document.getElementById('auth-toggle-text');
 const authToggleLink = document.getElementById('auth-toggle-link');
 
+// Auto Currency Input Formatting Helper (Real-time Thousands Separator Dots)
+function attachAutoCurrencyFormatting(inputEl) {
+    if (!inputEl) return;
+    inputEl.addEventListener('input', (e) => {
+        const raw = e.target.value.replace(/\D/g, '');
+        if (!raw) {
+            e.target.value = '';
+            return;
+        }
+        e.target.value = new Intl.NumberFormat('id-ID').format(parseInt(raw, 10));
+    });
+}
+
+function parseCurrencyInput(value) {
+    if (!value) return 0;
+    const clean = value.toString().replace(/\D/g, '');
+    return parseFloat(clean) || 0;
+}
+
+function formatNumberString(num) {
+    if (isNaN(num) || num === null || num === undefined) return '0';
+    return new Intl.NumberFormat('id-ID').format(Math.abs(num));
+}
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Date formatting
@@ -131,11 +155,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const localNow = new Date(now.getTime() - offsetMs);
     if (inputDate) inputDate.value = localNow.toISOString().slice(0, 16);
 
-    // 3. Populate categories for Expense initially
+    // 3. Attach Automatic Real-time Currency Formatting (Dot Separator)
+    attachAutoCurrencyFormatting(inputAmount);
+    attachAutoCurrencyFormatting(editAmount);
+    attachAutoCurrencyFormatting(inputBudgetTarget);
+
+    // 4. Populate categories for Expense initially
     setTransactionType('expense');
     populateFilterCategories();
 
-    // 4. Attach Listeners
+    // 5. Attach Listeners
     if (formTransaction) formTransaction.addEventListener('submit', handleAddTransaction);
     if (btnRunSetup) btnRunSetup.addEventListener('click', runDatabaseSetup);
     if (btnClearData) btnClearData.addEventListener('click', handleClearData);
@@ -162,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (authToggleLink) authToggleLink.addEventListener('click', toggleAuthMode);
     if (btnLogout) btnLogout.addEventListener('click', handleLogout);
 
-    // 5. Monitor Supabase Auth state changes
+    // 6. Monitor Supabase Auth state changes
     supabaseClient.auth.onAuthStateChange((event, session) => {
         currentSession = session;
         if (session) {
@@ -205,21 +234,21 @@ function setTransactionType(type) {
 
     if (type === 'expense') {
         if (btnTypeExpense) {
-            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-md";
+            btnTypeExpense.className = "py-2 px-2.5 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-md";
             btnTypeExpense.querySelector('span').className = "w-2 h-2 rounded-full bg-rose-400 animate-pulse";
         }
         if (btnTypeIncome) {
-            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 text-emerald-200/60 hover:text-white";
+            btnTypeIncome.className = "py-2 px-2.5 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-1.5 text-emerald-200/60 hover:text-white";
             btnTypeIncome.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-700";
         }
         populateCategoriesForSelect(inputCategory, expenseCategories);
     } else {
         if (btnTypeIncome) {
-            btnTypeIncome.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-md";
+            btnTypeIncome.className = "py-2 px-2.5 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-md";
             btnTypeIncome.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         }
         if (btnTypeExpense) {
-            btnTypeExpense.className = "py-2.5 px-4 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-2 text-emerald-200/60 hover:text-white";
+            btnTypeExpense.className = "py-2 px-2.5 rounded-xl text-xs font-extrabold text-center transition-all duration-200 flex items-center justify-center gap-1.5 text-emerald-200/60 hover:text-white";
             btnTypeExpense.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-700";
         }
         populateCategoriesForSelect(inputCategory, incomeCategories);
@@ -351,7 +380,7 @@ function renderBudgetTracker(spendingMonth) {
 }
 
 function openBudgetModal() {
-    if (inputBudgetTarget) inputBudgetTarget.value = monthlyBudgetLimit;
+    if (inputBudgetTarget) inputBudgetTarget.value = formatNumberString(monthlyBudgetLimit);
     if (modalBudget) modalBudget.classList.remove('hidden');
 }
 
@@ -360,12 +389,12 @@ function closeBudgetModal() {
 }
 
 function setPresetBudget(amount) {
-    if (inputBudgetTarget) inputBudgetTarget.value = amount;
+    if (inputBudgetTarget) inputBudgetTarget.value = formatNumberString(amount);
 }
 
 function saveBudgetModal() {
     if (!inputBudgetTarget) return;
-    const val = parseFloat(inputBudgetTarget.value);
+    const val = parseCurrencyInput(inputBudgetTarget.value);
     if (!isNaN(val) && val > 0) {
         monthlyBudgetLimit = val;
         localStorage.setItem('emerald_budget_limit', val);
@@ -415,7 +444,6 @@ function renderCategoryChart(categoryData, totalExpense) {
         categoryChart.destroy();
     }
 
-    // Custom Plugin to draw text inside doughnut center
     const centerTextPlugin = {
         id: 'centerText',
         afterDraw(chart) {
@@ -461,7 +489,7 @@ function renderCategoryChart(categoryData, totalExpense) {
                     labels: {
                         color: '#D1FAE5',
                         font: { family: 'Outfit', size: 12, weight: '600' },
-                        padding: 16,
+                        padding: 14,
                         usePointStyle: true,
                         pointStyle: 'circle'
                     }
@@ -632,7 +660,7 @@ async function handleAddTransaction(e) {
         Menyimpan...
     `;
 
-    const amount = parseFloat(inputAmount.value);
+    const amount = parseCurrencyInput(inputAmount.value);
     const type = inputType.value;
     const category = inputCategory.value;
     const dateVal = inputDate.value;
@@ -699,7 +727,7 @@ function openEditModal(id) {
 
     if (editId) editId.value = tx.id;
     if (editType) editType.value = tx.type;
-    if (editAmount) editAmount.value = tx.amount;
+    if (editAmount) editAmount.value = formatNumberString(tx.amount);
     
     const categories = tx.type === 'expense' ? expenseCategories : incomeCategories;
     populateCategoriesForSelect(editCategory, categories);
@@ -726,7 +754,7 @@ async function handleSaveEdit(e) {
     if (!editId) return;
 
     const id = editId.value;
-    const amount = parseFloat(editAmount.value);
+    const amount = parseCurrencyInput(editAmount.value);
     const type = editType.value;
     const category = editCategory.value;
     const dateVal = editDate.value;
@@ -1128,7 +1156,7 @@ async function handleAuthSubmit(e) {
     }
 
     if (!isLoginMode && password.length < 6) {
-        showToast('Password minimal harus 6 karakter.', 'error');
+        showToast('Password minimal mebutuhkan 6 karakter.', 'error');
         return;
     }
     

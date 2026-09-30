@@ -39,6 +39,7 @@ const currentDateEl = document.getElementById('current-date');
 const btnRunSetup = document.getElementById('btn-run-setup');
 const btnClearData = document.getElementById('btn-clear-data');
 const btnExportCSV = document.getElementById('btn-export-csv');
+const btnExportExcel = document.getElementById('btn-export-excel');
 const spinnerSetup = document.getElementById('spinner-setup');
 const bannerDbStatus = document.getElementById('banner-database-status');
 
@@ -169,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnRunSetup) btnRunSetup.addEventListener('click', runDatabaseSetup);
     if (btnClearData) btnClearData.addEventListener('click', handleClearData);
     if (btnExportCSV) btnExportCSV.addEventListener('click', handleExportCSV);
+    if (btnExportExcel) btnExportExcel.addEventListener('click', handleExportExcel);
 
     if (filterSearch) filterSearch.addEventListener('input', applyFilters);
     if (filterType) filterType.addEventListener('change', applyFilters);
@@ -825,7 +827,165 @@ function handleDeleteTransaction(id) {
     );
 }
 
-// Export CSV Feature (Pro Excel-Friendly Formatted Export)
+// Export Excel Feature (Formatted HTML Spreadsheet with Cell Borders, Colors & Explicit Column Widths)
+function handleExportExcel() {
+    if (allTransactions.length === 0) {
+        showToast('Tidak ada data transaksi untuk diekspor.', 'warning');
+        return;
+    }
+
+    const today = new Date();
+    const exportDateStr = today.toLocaleDateString('id-ID', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+    }).replace('.', ':');
+    
+    // Calculate summary totals
+    let totalIncome = 0;
+    let totalExpense = 0;
+    allTransactions.forEach(tx => {
+        const amt = parseFloat(tx.amount) || 0;
+        if (tx.type === 'income') totalIncome += amt;
+        else totalExpense += amt;
+    });
+    const netBalance = totalIncome - totalExpense;
+    const userEmail = currentSession && currentSession.user ? currentSession.user.email : 'Pengguna Emerald';
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--[if gte mso 9]>
+<xml>
+ <x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+   <x:ExcelWorksheet>
+    <x:Name>Laporan Keuangan</x:Name>
+    <x:WorksheetOptions>
+     <x:DisplayGridlines/>
+    </x:WorksheetOptions>
+   </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+ </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+  table { border-collapse: collapse; width: 100%; }
+  .title-banner { background-color: #059669; color: #FFFFFF; font-size: 16pt; font-weight: bold; text-align: center; vertical-align: middle; height: 45px; border: 1px solid #047857; }
+  .subtitle-banner { background-color: #064E3B; color: #D1FAE5; font-size: 10pt; text-align: center; vertical-align: middle; height: 26px; border: 1px solid #047857; }
+  .spacer-row { height: 14px; }
+  
+  .th-header { background-color: #059669; color: #FFFFFF; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #047857; height: 34px; font-size: 11pt; }
+  
+  .td-cell { border: 1px solid #CBD5E1; vertical-align: middle; padding: 8px 10px; font-size: 10pt; color: #1E293B; }
+  .td-center { border: 1px solid #CBD5E1; text-align: center; vertical-align: middle; padding: 8px 10px; font-size: 10pt; color: #1E293B; }
+  
+  .badge-income { background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: center; border: 1px solid #A7F3D0; vertical-align: middle; padding: 6px 10px; font-size: 10pt; }
+  .badge-expense { background-color: #FEE2E2; color: #991B1B; font-weight: bold; text-align: center; border: 1px solid #FCA5A5; vertical-align: middle; padding: 6px 10px; font-size: 10pt; }
+  
+  .td-income { border: 1px solid #CBD5E1; text-align: right; color: #059669; font-weight: bold; vertical-align: middle; padding: 8px 10px; font-size: 10pt; mso-number-format:"\#\,\#\#0"; }
+  .td-expense { border: 1px solid #CBD5E1; text-align: right; color: #DC2626; font-weight: bold; vertical-align: middle; padding: 8px 10px; font-size: 10pt; mso-number-format:"\#\,\#\#0"; }
+  .td-empty { border: 1px solid #CBD5E1; text-align: center; color: #94A3B8; vertical-align: middle; padding: 8px 10px; font-size: 10pt; }
+  
+  .tfoot-label { background-color: #E2E8F0; color: #0F172A; font-weight: bold; text-align: right; border: 1px solid #94A3B8; padding: 10px; font-size: 11pt; }
+  .tfoot-income { background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: right; border: 1px solid #94A3B8; padding: 10px; font-size: 11pt; mso-number-format:"\#\,\#\#0"; }
+  .tfoot-expense { background-color: #FEE2E2; color: #991B1B; font-weight: bold; text-align: right; border: 1px solid #94A3B8; padding: 10px; font-size: 11pt; mso-number-format:"\#\,\#\#0"; }
+  .tfoot-net { background-color: #064E3B; color: #FFFFFF; font-weight: bold; text-align: right; border: 1px solid #047857; padding: 10px; font-size: 11pt; mso-number-format:"\#\,\#\#0"; }
+</style>
+</head>
+<body>
+<table>
+  <!-- Header Banner -->
+  <tr>
+    <td colspan="7" class="title-banner">LAPORAN KEUANGAN PERSONAL - EMERALD</td>
+  </tr>
+  <tr>
+    <td colspan="7" class="subtitle-banner">Tanggal Ekspor: ${exportDateStr} | Akun: ${escapeHtml(userEmail)}</td>
+  </tr>
+  <tr class="spacer-row"><td colspan="7"></td></tr>
+  
+  <!-- Column Headers -->
+  <thead>
+    <tr>
+      <th class="th-header" style="width: 50px;">No</th>
+      <th class="th-header" style="width: 160px;">Tanggal & Waktu</th>
+      <th class="th-header" style="width: 130px;">Tipe</th>
+      <th class="th-header" style="width: 170px;">Kategori</th>
+      <th class="th-header" style="width: 170px;">Pemasukan (Rp)</th>
+      <th class="th-header" style="width: 170px;">Pengeluaran (Rp)</th>
+      <th class="th-header" style="width: 260px;">Deskripsi</th>
+    </tr>
+  </thead>
+  <tbody>`;
+
+    allTransactions.forEach((tx, idx) => {
+        const isIncome = tx.type === 'income';
+        const num = idx + 1;
+        const formattedDate = formatDateString(tx.date);
+        const typeBadge = isIncome 
+            ? `<td class="badge-income">Pemasukan</td>` 
+            : `<td class="badge-expense">Pengeluaran</td>`;
+        
+        const incomeCell = isIncome 
+            ? `<td class="td-income" x:num="${tx.amount}">${formatNumberString(tx.amount)}</td>`
+            : `<td class="td-empty">-</td>`;
+            
+        const expenseCell = !isIncome 
+            ? `<td class="td-expense" x:num="${tx.amount}">${formatNumberString(tx.amount)}</td>`
+            : `<td class="td-empty">-</td>`;
+
+        const rowBg = (idx % 2 === 1) ? 'style="background-color: #F8FAFC;"' : '';
+
+        html += `
+    <tr ${rowBg}>
+      <td class="td-center">${num}</td>
+      <td class="td-center">${formattedDate}</td>
+      ${typeBadge}
+      <td class="td-cell">${escapeHtml(tx.category || '')}</td>
+      ${incomeCell}
+      ${expenseCell}
+      <td class="td-cell">${escapeHtml(tx.description || '—')}</td>
+    </tr>`;
+    });
+
+    html += `
+  </tbody>
+  <tfoot>
+    <tr class="spacer-row"><td colspan="7"></td></tr>
+    <tr>
+      <td colspan="4" class="tfoot-label">TOTAL PEMASUKAN</td>
+      <td class="tfoot-income" x:num="${totalIncome}">${formatNumberString(totalIncome)}</td>
+      <td class="td-empty">-</td>
+      <td class="td-cell"></td>
+    </tr>
+    <tr>
+      <td colspan="4" class="tfoot-label">TOTAL PENGELUARAN</td>
+      <td class="td-empty">-</td>
+      <td class="tfoot-expense" x:num="${totalExpense}">${formatNumberString(totalExpense)}</td>
+      <td class="td-cell"></td>
+    </tr>
+    <tr>
+      <td colspan="4" class="tfoot-label">SALDO BERSIH (NET BALANCE)</td>
+      <td colspan="2" class="tfoot-net" x:num="${netBalance}">Rp ${formatNumberString(netBalance)}</td>
+      <td class="td-cell"></td>
+    </tr>
+  </tfoot>
+</table>
+</body>
+</html>`;
+
+    const blob = new Blob(["\uFEFF" + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const dateFileStr = today.toISOString().slice(0, 10);
+    link.setAttribute('download', `Emerald_Laporan_Keuangan_${dateFileStr}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Laporan Keuangan berhasil diekspor ke format Tabel Excel (.xls)!', 'success');
+}
+
+// Export CSV Feature (Excel-Friendly Formatted Delimited Text)
 function handleExportCSV() {
     if (allTransactions.length === 0) {
         showToast('Tidak ada data transaksi untuk diekspor.', 'warning');
@@ -845,37 +1005,29 @@ function handleExportCSV() {
     });
     const netBalance = totalIncome - totalExpense;
 
-    // Semicolon (;) delimiter for Excel Indonesian regional compatibility
     const delimiter = ";";
-    let csvContent = "\uFEFF"; // UTF-8 BOM for character encoding
+    let csvContent = "\uFEFF"; // UTF-8 BOM
     csvContent += `sep=${delimiter}\n`;
     csvContent += `LAPORAN KEUANGAN PERSONAL - EMERALD\n`;
     csvContent += `Tanggal Ekspor${delimiter}${exportDateStr}\n`;
     csvContent += `Akun Pengguna${delimiter}${currentSession && currentSession.user ? currentSession.user.email : 'Pengguna'}\n`;
-    csvContent += `Ringkasan Finansial${delimiter}Total Pemasukan: ${formatCurrency(totalIncome)} | Total Pengeluaran: ${formatCurrency(totalExpense)} | Saldo Bersih: ${formatCurrency(netBalance)}\n\n`;
+    csvContent += `Total Pemasukan${delimiter}${formatNumberString(totalIncome)}\n`;
+    csvContent += `Total Pengeluaran${delimiter}${formatNumberString(totalExpense)}\n`;
+    csvContent += `Saldo Bersih${delimiter}${formatNumberString(netBalance)}\n\n`;
 
-    // Table Header Columns
-    csvContent += `No${delimiter}Tanggal & Waktu${delimiter}Tipe Transaksi${delimiter}Kategori${delimiter}Nominal (Rp)${delimiter}Deskripsi\n`;
+    // Columns: No; Tanggal; Tipe; Kategori; Pemasukan; Pengeluaran; Deskripsi
+    csvContent += `No${delimiter}Tanggal & Waktu${delimiter}Tipe Transaksi${delimiter}Kategori${delimiter}Pemasukan (Rp)${delimiter}Pengeluaran (Rp)${delimiter}Deskripsi\n`;
 
     allTransactions.forEach((tx, idx) => {
         const indexStr = idx + 1;
-        
-        let normalizedDate = tx.date;
-        if (typeof normalizedDate === 'string' && !normalizedDate.endsWith('Z') && !normalizedDate.includes('+', 10) && !normalizedDate.includes('-', 10)) {
-            normalizedDate = normalizedDate.replace(' ', 'T') + 'Z';
-        }
-        const dateObj = new Date(normalizedDate);
-        const dateFormatted = !isNaN(dateObj.getTime()) 
-            ? dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace('.', ':')
-            : tx.date;
-        
+        const dateFormatted = formatDateString(tx.date);
         const typeStr = tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
         const categoryStr = `"${(tx.category || '').replace(/"/g, '""')}"`;
-        const sign = tx.type === 'income' ? '+' : '-';
-        const formattedAmount = `"${sign} ${formatNumberString(tx.amount)}"`;
+        const incomeAmt = tx.type === 'income' ? `"${formatNumberString(tx.amount)}"` : '""';
+        const expenseAmt = tx.type === 'expense' ? `"${formatNumberString(tx.amount)}"` : '""';
         const descStr = `"${(tx.description || '').replace(/"/g, '""')}"`;
 
-        csvContent += `${indexStr}${delimiter}${dateFormatted}${delimiter}${typeStr}${delimiter}${categoryStr}${delimiter}${formattedAmount}${delimiter}${descStr}\n`;
+        csvContent += `${indexStr}${delimiter}${dateFormatted}${delimiter}${typeStr}${delimiter}${categoryStr}${delimiter}${incomeAmt}${delimiter}${expenseAmt}${delimiter}${descStr}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -887,7 +1039,7 @@ function handleExportCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('File CSV Laporan Keuangan berhasil diunduh secara rapi!', 'success');
+    showToast('File CSV Laporan Keuangan berhasil diunduh!', 'success');
 }
 
 // Automated Setup and Seeding

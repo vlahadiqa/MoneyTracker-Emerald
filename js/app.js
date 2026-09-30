@@ -827,162 +827,226 @@ function handleDeleteTransaction(id) {
     );
 }
 
-// Export Excel Feature (Formatted HTML Spreadsheet with Cell Borders, Colors & Explicit Column Widths)
-function handleExportExcel() {
+// Export Excel Feature (100% Native OpenXML .xlsx Binary Spreadsheet via ExcelJS)
+async function handleExportExcel() {
     if (allTransactions.length === 0) {
         showToast('Tidak ada data transaksi untuk diekspor.', 'warning');
         return;
     }
 
-    const today = new Date();
-    const exportDateStr = today.toLocaleDateString('id-ID', { 
-        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
-    }).replace('.', ':');
-    
-    // Calculate summary totals
-    let totalIncome = 0;
-    let totalExpense = 0;
-    allTransactions.forEach(tx => {
-        const amt = parseFloat(tx.amount) || 0;
-        if (tx.type === 'income') totalIncome += amt;
-        else totalExpense += amt;
-    });
-    const netBalance = totalIncome - totalExpense;
-    const userEmail = currentSession && currentSession.user ? currentSession.user.email : 'Pengguna Emerald';
+    if (typeof ExcelJS === 'undefined') {
+        showToast('Library Excel sedang dimuat, harap coba beberapa detik lagi...', 'warning');
+        return;
+    }
 
-    let html = `<html xmlns:o="urn:schemas-microsoft-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!--[if gte mso 9]>
-<xml>
- <x:ExcelWorkbook>
-  <x:ExcelWorksheets>
-   <x:ExcelWorksheet>
-    <x:Name>Laporan Keuangan</x:Name>
-    <x:WorksheetOptions>
-     <x:DisplayGridlines/>
-    </x:WorksheetOptions>
-   </x:ExcelWorksheet>
-  </x:ExcelWorksheets>
- </x:ExcelWorkbook>
-</xml>
-<![endif]-->
-<style>
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-  table { border-collapse: collapse; width: 100%; }
-  .title-banner { background-color: #059669; color: #FFFFFF; font-size: 16pt; font-weight: bold; text-align: center; vertical-align: middle; height: 45px; border: 1px solid #047857; }
-  .subtitle-banner { background-color: #064E3B; color: #D1FAE5; font-size: 10pt; text-align: center; vertical-align: middle; height: 26px; border: 1px solid #047857; }
-  .spacer-row { height: 14px; }
-  
-  .th-header { background-color: #059669; color: #FFFFFF; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #047857; height: 34px; font-size: 11pt; }
-  
-  .td-cell { border: 1px solid #CBD5E1; vertical-align: middle; padding: 8px 10px; font-size: 10pt; color: #1E293B; }
-  .td-center { border: 1px solid #CBD5E1; text-align: center; vertical-align: middle; padding: 8px 10px; font-size: 10pt; color: #1E293B; }
-  
-  .badge-income { background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: center; border: 1px solid #A7F3D0; vertical-align: middle; padding: 6px 10px; font-size: 10pt; }
-  .badge-expense { background-color: #FEE2E2; color: #991B1B; font-weight: bold; text-align: center; border: 1px solid #FCA5A5; vertical-align: middle; padding: 6px 10px; font-size: 10pt; }
-  
-  .td-income { border: 1px solid #CBD5E1; text-align: right; color: #059669; font-weight: bold; vertical-align: middle; padding: 8px 10px; font-size: 10pt; mso-number-format:"\#\,\#\#0"; }
-  .td-expense { border: 1px solid #CBD5E1; text-align: right; color: #DC2626; font-weight: bold; vertical-align: middle; padding: 8px 10px; font-size: 10pt; mso-number-format:"\#\,\#\#0"; }
-  .td-empty { border: 1px solid #CBD5E1; text-align: center; color: #94A3B8; vertical-align: middle; padding: 8px 10px; font-size: 10pt; }
-  
-  .tfoot-label { background-color: #E2E8F0; color: #0F172A; font-weight: bold; text-align: right; border: 1px solid #94A3B8; padding: 10px; font-size: 11pt; }
-  .tfoot-income { background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: right; border: 1px solid #94A3B8; padding: 10px; font-size: 11pt; mso-number-format:"\#\,\#\#0"; }
-  .tfoot-expense { background-color: #FEE2E2; color: #991B1B; font-weight: bold; text-align: right; border: 1px solid #94A3B8; padding: 10px; font-size: 11pt; mso-number-format:"\#\,\#\#0"; }
-  .tfoot-net { background-color: #064E3B; color: #FFFFFF; font-weight: bold; text-align: right; border: 1px solid #047857; padding: 10px; font-size: 11pt; mso-number-format:"\#\,\#\#0"; }
-</style>
-</head>
-<body>
-<table>
-  <!-- Header Banner -->
-  <tr>
-    <td colspan="7" class="title-banner">LAPORAN KEUANGAN PERSONAL - EMERALD</td>
-  </tr>
-  <tr>
-    <td colspan="7" class="subtitle-banner">Tanggal Ekspor: ${exportDateStr} | Akun: ${escapeHtml(userEmail)}</td>
-  </tr>
-  <tr class="spacer-row"><td colspan="7"></td></tr>
-  
-  <!-- Column Headers -->
-  <thead>
-    <tr>
-      <th class="th-header" style="width: 50px;">No</th>
-      <th class="th-header" style="width: 160px;">Tanggal & Waktu</th>
-      <th class="th-header" style="width: 130px;">Tipe</th>
-      <th class="th-header" style="width: 170px;">Kategori</th>
-      <th class="th-header" style="width: 170px;">Pemasukan (Rp)</th>
-      <th class="th-header" style="width: 170px;">Pengeluaran (Rp)</th>
-      <th class="th-header" style="width: 260px;">Deskripsi</th>
-    </tr>
-  </thead>
-  <tbody>`;
+    try {
+        const today = new Date();
+        const exportDateStr = today.toLocaleDateString('id-ID', { 
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+        }).replace('.', ':');
+        const userEmail = currentSession && currentSession.user ? currentSession.user.email : 'Pengguna Emerald';
 
-    allTransactions.forEach((tx, idx) => {
-        const isIncome = tx.type === 'income';
-        const num = idx + 1;
-        const formattedDate = formatDateString(tx.date);
-        const typeBadge = isIncome 
-            ? `<td class="badge-income">Pemasukan</td>` 
-            : `<td class="badge-expense">Pengeluaran</td>`;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Laporan Keuangan');
+
+        // Explicit wide column widths so no numbers ever get compressed to ###
+        worksheet.columns = [
+            { header: '', key: 'no', width: 8 },
+            { header: '', key: 'date', width: 22 },
+            { header: '', key: 'type', width: 16 },
+            { header: '', key: 'category', width: 24 },
+            { header: '', key: 'income', width: 32 },
+            { header: '', key: 'expense', width: 32 },
+            { header: '', key: 'desc', width: 36 }
+        ];
+
+        // 1. Title Banner (Row 1)
+        const titleRow = worksheet.addRow(['LAPORAN KEUANGAN PERSONAL - EMERALD']);
+        worksheet.mergeCells('A1:G1');
+        titleRow.height = 36;
+        const titleCell = titleRow.getCell(1);
+        titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+        titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        // 2. Subtitle Banner (Row 2)
+        const subTitleRow = worksheet.addRow([`Tanggal Ekspor: ${exportDateStr} | Akun: ${userEmail}`]);
+        worksheet.mergeCells('A2:G2');
+        subTitleRow.height = 22;
+        const subTitleCell = subTitleRow.getCell(1);
+        subTitleCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FFD1FAE5' } };
+        subTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF064E3B' } };
+        subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        // Row 3 Blank
+        worksheet.addRow([]);
+
+        // 3. Header Row (Row 4)
+        const headerRow = worksheet.addRow([
+            'No', 'Tanggal & Waktu', 'Tipe Transaksi', 'Kategori', 'Pemasukan (Rp)', 'Pengeluaran (Rp)', 'Deskripsi'
+        ]);
+        headerRow.height = 28;
+
+        const thinBorder = {
+            top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+            left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+            bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+            right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+        };
+
+        headerRow.eachCell((cell) => {
+            cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'medium', color: { argb: 'FF047857' } },
+                left: { style: 'thin', color: { argb: 'FF047857' } },
+                bottom: { style: 'medium', color: { argb: 'FF047857' } },
+                right: { style: 'thin', color: { argb: 'FF047857' } }
+            };
+        });
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        // 4. Data Rows
+        allTransactions.forEach((tx, idx) => {
+            const isIncome = tx.type === 'income';
+            const amt = parseFloat(tx.amount) || 0;
+            if (isIncome) totalIncome += amt;
+            else totalExpense += amt;
+
+            const rowNum = idx + 1;
+            const dateFormatted = formatDateString(tx.date);
+            const typeStr = isIncome ? 'Pemasukan' : 'Pengeluaran';
+            const catStr = tx.category || '';
+            const descStr = tx.description || '—';
+
+            // Format number string with dot separators so even 18-digit numbers render cleanly
+            const formattedAmt = formatNumberString(amt);
+            const incomeVal = isIncome ? formattedAmt : '-';
+            const expenseVal = !isIncome ? formattedAmt : '-';
+
+            const dataRow = worksheet.addRow([
+                rowNum,
+                dateFormatted,
+                typeStr,
+                catStr,
+                incomeVal,
+                expenseVal,
+                descStr
+            ]);
+            dataRow.height = 22;
+
+            const isEven = idx % 2 === 1;
+            const rowBgColor = isEven ? 'FFF8FAFC' : 'FFFFFFFF';
+
+            dataRow.eachCell((cell, colNumber) => {
+                cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF1E293B' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBgColor } };
+                cell.border = thinBorder;
+
+                if (colNumber === 1 || colNumber === 2) {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                } else if (colNumber === 3) {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    if (isIncome) {
+                        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF065F46' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+                    } else {
+                        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF991B1B' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+                    }
+                } else if (colNumber === 4 || colNumber === 7) {
+                    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                } else if (colNumber === 5) {
+                    if (isIncome) {
+                        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF059669' } };
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                    } else {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF94A3B8' } };
+                    }
+                } else if (colNumber === 6) {
+                    if (!isIncome) {
+                        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFDC2626' } };
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                    } else {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF94A3B8' } };
+                    }
+                }
+            });
+        });
+
+        const netBalance = totalIncome - totalExpense;
+
+        // Blank row before totals
+        worksheet.addRow([]);
+
+        // Total Pemasukan Row
+        const rowTotInc = worksheet.addRow(['TOTAL PEMASUKAN', '', '', '', formatNumberString(totalIncome), '-', '']);
+        worksheet.mergeCells(`A${rowTotInc.number}:D${rowTotInc.number}`);
+        rowTotInc.height = 24;
+        rowTotInc.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+        rowTotInc.getCell(1).font = { name: 'Segoe UI', size: 10, bold: true };
+        rowTotInc.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
         
-        const incomeCell = isIncome 
-            ? `<td class="td-income" x:num="${tx.amount}">${formatNumberString(tx.amount)}</td>`
-            : `<td class="td-empty">-</td>`;
-            
-        const expenseCell = !isIncome 
-            ? `<td class="td-expense" x:num="${tx.amount}">${formatNumberString(tx.amount)}</td>`
-            : `<td class="td-empty">-</td>`;
+        const incTotCell = rowTotInc.getCell(5);
+        incTotCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF065F46' } };
+        incTotCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        incTotCell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-        const rowBg = (idx % 2 === 1) ? 'style="background-color: #F8FAFC;"' : '';
+        rowTotInc.eachCell({ includeEmpty: true }, (cell) => { cell.border = thinBorder; });
 
-        html += `
-    <tr ${rowBg}>
-      <td class="td-center">${num}</td>
-      <td class="td-center">${formattedDate}</td>
-      ${typeBadge}
-      <td class="td-cell">${escapeHtml(tx.category || '')}</td>
-      ${incomeCell}
-      ${expenseCell}
-      <td class="td-cell">${escapeHtml(tx.description || '—')}</td>
-    </tr>`;
-    });
+        // Total Pengeluaran Row
+        const rowTotExp = worksheet.addRow(['TOTAL PENGELUARAN', '', '', '', '-', formatNumberString(totalExpense), '']);
+        worksheet.mergeCells(`A${rowTotExp.number}:D${rowTotExp.number}`);
+        rowTotExp.height = 24;
+        rowTotExp.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+        rowTotExp.getCell(1).font = { name: 'Segoe UI', size: 10, bold: true };
+        rowTotExp.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
 
-    html += `
-  </tbody>
-  <tfoot>
-    <tr class="spacer-row"><td colspan="7"></td></tr>
-    <tr>
-      <td colspan="4" class="tfoot-label">TOTAL PEMASUKAN</td>
-      <td class="tfoot-income" x:num="${totalIncome}">${formatNumberString(totalIncome)}</td>
-      <td class="td-empty">-</td>
-      <td class="td-cell"></td>
-    </tr>
-    <tr>
-      <td colspan="4" class="tfoot-label">TOTAL PENGELUARAN</td>
-      <td class="td-empty">-</td>
-      <td class="tfoot-expense" x:num="${totalExpense}">${formatNumberString(totalExpense)}</td>
-      <td class="td-cell"></td>
-    </tr>
-    <tr>
-      <td colspan="4" class="tfoot-label">SALDO BERSIH (NET BALANCE)</td>
-      <td colspan="2" class="tfoot-net" x:num="${netBalance}">Rp ${formatNumberString(netBalance)}</td>
-      <td class="td-cell"></td>
-    </tr>
-  </tfoot>
-</table>
-</body>
-</html>`;
+        const expTotCell = rowTotExp.getCell(6);
+        expTotCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF991B1B' } };
+        expTotCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+        expTotCell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-    const blob = new Blob(["\uFEFF" + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    const dateFileStr = today.toISOString().slice(0, 10);
-    link.setAttribute('download', `Emerald_Laporan_Keuangan_${dateFileStr}.xls`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Laporan Keuangan berhasil diekspor ke format Tabel Excel (.xls)!', 'success');
+        rowTotExp.eachCell({ includeEmpty: true }, (cell) => { cell.border = thinBorder; });
+
+        // Saldo Bersih Row
+        const netSign = netBalance >= 0 ? 'Rp ' : '- Rp ';
+        const rowNet = worksheet.addRow(['SALDO BERSIH (NET BALANCE)', '', '', '', netSign + formatNumberString(netBalance), '', '']);
+        worksheet.mergeCells(`A${rowNet.number}:D${rowNet.number}`);
+        worksheet.mergeCells(`E${rowNet.number}:F${rowNet.number}`);
+        rowNet.height = 26;
+        rowNet.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+        rowNet.getCell(1).font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        rowNet.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF064E3B' } };
+
+        const netValCell = rowNet.getCell(5);
+        netValCell.alignment = { horizontal: 'right', vertical: 'middle' };
+        netValCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        netValCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } };
+
+        rowNet.eachCell({ includeEmpty: true }, (cell) => { cell.border = thinBorder; });
+
+        // Export to real .xlsx binary blob
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const dateFileStr = today.toISOString().slice(0, 10);
+        link.download = `Emerald_Laporan_Keuangan_${dateFileStr}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Laporan Keuangan berhasil diekspor ke file Excel asli (.xlsx)!', 'success');
+    } catch (err) {
+        console.error('Export Excel failed:', err);
+        showToast('Gagal mengekspor ke file Excel.', 'error');
+    }
 }
 
 // Export CSV Feature (Excel-Friendly Formatted Delimited Text)

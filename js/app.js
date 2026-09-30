@@ -825,34 +825,69 @@ function handleDeleteTransaction(id) {
     );
 }
 
-// Export CSV Feature
+// Export CSV Feature (Pro Excel-Friendly Formatted Export)
 function handleExportCSV() {
     if (allTransactions.length === 0) {
         showToast('Tidak ada data transaksi untuk diekspor.', 'warning');
         return;
     }
 
-    let csvContent = "\uFEFFTanggal,Tipe,Kategori,Nominal (IDR),Deskripsi\n";
-
+    const today = new Date();
+    const exportDateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+    
+    // Calculate summary totals
+    let totalIncome = 0;
+    let totalExpense = 0;
     allTransactions.forEach(tx => {
-        const dateStr = formatDateString(tx.date).replace(/,/g, '');
+        const amt = parseFloat(tx.amount) || 0;
+        if (tx.type === 'income') totalIncome += amt;
+        else totalExpense += amt;
+    });
+    const netBalance = totalIncome - totalExpense;
+
+    // Semicolon (;) delimiter for Excel Indonesian regional compatibility
+    const delimiter = ";";
+    let csvContent = "\uFEFF"; // UTF-8 BOM for character encoding
+    csvContent += `sep=${delimiter}\n`;
+    csvContent += `LAPORAN KEUANGAN PERSONAL - EMERALD\n`;
+    csvContent += `Tanggal Ekspor${delimiter}${exportDateStr}\n`;
+    csvContent += `Akun Pengguna${delimiter}${currentSession && currentSession.user ? currentSession.user.email : 'Pengguna'}\n`;
+    csvContent += `Ringkasan Finansial${delimiter}Total Pemasukan: ${formatCurrency(totalIncome)} | Total Pengeluaran: ${formatCurrency(totalExpense)} | Saldo Bersih: ${formatCurrency(netBalance)}\n\n`;
+
+    // Table Header Columns
+    csvContent += `No${delimiter}Tanggal & Waktu${delimiter}Tipe Transaksi${delimiter}Kategori${delimiter}Nominal (Rp)${delimiter}Deskripsi\n`;
+
+    allTransactions.forEach((tx, idx) => {
+        const indexStr = idx + 1;
+        
+        let normalizedDate = tx.date;
+        if (typeof normalizedDate === 'string' && !normalizedDate.endsWith('Z') && !normalizedDate.includes('+', 10) && !normalizedDate.includes('-', 10)) {
+            normalizedDate = normalizedDate.replace(' ', 'T') + 'Z';
+        }
+        const dateObj = new Date(normalizedDate);
+        const dateFormatted = !isNaN(dateObj.getTime()) 
+            ? dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace('.', ':')
+            : tx.date;
+        
         const typeStr = tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
         const categoryStr = `"${(tx.category || '').replace(/"/g, '""')}"`;
-        const amountStr = tx.amount;
+        const sign = tx.type === 'income' ? '+' : '-';
+        const formattedAmount = `"${sign} ${formatNumberString(tx.amount)}"`;
         const descStr = `"${(tx.description || '').replace(/"/g, '""')}"`;
 
-        csvContent += `${dateStr},${typeStr},${categoryStr},${amountStr},${descStr}\n`;
+        csvContent += `${indexStr}${delimiter}${dateFormatted}${delimiter}${typeStr}${delimiter}${categoryStr}${delimiter}${formattedAmount}${delimiter}${descStr}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Emerald_Transaksi_${new Date().toISOString().slice(0,10)}.csv`);
+    const dateFileStr = today.toISOString().slice(0, 10);
+    link.setAttribute('download', `Emerald_Laporan_Keuangan_${dateFileStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('File CSV berhasil diunduh!', 'success');
+    showToast('File CSV Laporan Keuangan berhasil diunduh secara rapi!', 'success');
 }
 
 // Automated Setup and Seeding
